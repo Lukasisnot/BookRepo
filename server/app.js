@@ -6,12 +6,13 @@ var logger = require('morgan');
 const cors = require("cors");
 const mongoose = require('mongoose');
 mongoose
-.connect('')
+.connect('mongodb+srv://admin:adminadmin@cluster0.zymn1.mongodb.net/bohata?retryWrites=true&w=majority&appName=cluster0')
 .then(() => console.log("Database connected"))
 .catch((err) => console.log(err));
 
 var indexRouter = require('./routes/index');
 var catsRouter = require('./routes/cats');
+var periodRouter = require('./routes/cats');
 
 var app = express();
 
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/cats', catsRouter);
+app.use('/period', periodRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
