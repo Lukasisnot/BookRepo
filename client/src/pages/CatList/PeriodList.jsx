@@ -1,20 +1,21 @@
 import { Link } from "react-router-dom";
-import CatLink from "./CatLink";
+import PeriodLink from "./PeriodLink";
 import { useState, useEffect } from "react";
-import { getCats } from "../../models/Cat";
+import api from "../../api"
+import { getPeriods } from "../../models/Period";
 
-export default function CatList() {
-  const [cats, setCats] = useState();
+export default function PeriodList() {
+  const [periods, setPeriods] = useState();
   const [isLoaded, setLoaded] = useState(false);
 
   const load = async () => {
-    const data = await getCats();
+    const data = await api.get("/getP");
     if (data.status === 500 || data.status === 404) return setLoaded(null);
     if (data.status === 200) {
-      setCats(data.payload);
+      setPeriods(data.payload);
       setLoaded(true);
     }
-  }
+  };
 
   useEffect(() => {
     load();
@@ -23,27 +24,25 @@ export default function CatList() {
   if (isLoaded === null) {
     return (
       <>
-        <p>Cats not found</p>
+        <p>Periods not found</p>
       </>
-    )
+    );
   }
 
   if (!isLoaded) {
     return (
       <>
-        <p>Cats are loading...</p>
+        <p>Periods are loading...</p>
       </>
-    )
+    );
   }
 
   return (
     <>
-      <h1>Cat list</h1>
-      {
-        cats.map((cat, index) => (
-          <CatLink key={index} {...cat} />
-        ))
-      }
+      <h1>Period List</h1>
+      {periods.map((period, index) => (
+        <PeriodLink key={index} {...period} />
+      ))}
       <Link to={"/"}>
         <p>Go back</p>
       </Link>

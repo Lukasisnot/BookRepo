@@ -1,5 +1,7 @@
-export const getCats = async () => {
-  const req = await fetch("http://localhost:3000/cats", {
+const API_URL = "http://localhost:3000/period"; // adjust if needed
+
+export const getPeriods = async () => {
+  const req = await fetch(API_URL, {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -13,8 +15,9 @@ export const getCats = async () => {
     msg: data.msg,
   };
 };
-export const getCat = async (id) => {
-  const req = await fetch(`http://localhost:3000/cats/${id}`, {
+
+export const getPeriod = async (id) => {
+  const req = await fetch(`${API_URL}/${id}`, {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -28,8 +31,9 @@ export const getCat = async (id) => {
     msg: data.msg,
   };
 };
-export const createCat = async (formData) => {
-  const req = await fetch(`http://localhost:3000/cats`, {
+
+export const createPeriod = async (formData) => {
+  const req = await fetch(API_URL, {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -44,8 +48,9 @@ export const createCat = async (formData) => {
     msg: data.msg,
   };
 };
-export const updateCat = async (id, formData) => {
-  const req = await fetch(`http://localhost:3000/cats/${id}`, {
+
+export const updatePeriod = async (id, formData) => {
+  const req = await fetch(`${API_URL}/${id}`, {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -60,8 +65,9 @@ export const updateCat = async (id, formData) => {
     msg: data.msg,
   };
 };
-export const deleteCat = async (id) => {
-  const req = await fetch(`http://localhost:3000/cats/${id}`, {
+
+export const deletePeriod = async (id) => {
+  const req = await fetch(`${API_URL}/${id}`, {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

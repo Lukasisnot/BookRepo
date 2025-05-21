@@ -12,7 +12,7 @@ mongoose
 
 var indexRouter = require('./routes/index');
 var catsRouter = require('./routes/cats');
-var periodRouter = require('./routes/cats');
+var periodRouter = require('./routes/period');
 
 var app = express();
 
