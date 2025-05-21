@@ -1,16 +1,19 @@
 import { Link, useParams } from "react-router-dom";
 
 export default function CreatedPeriod() {
-  const { id } = useParams();  
+  const { id } = useParams();
 
   return (
     <>
-      <p>Created period: {id}</p>
+      <h1>Period Created Successfully!</h1>
+      <p><strong>Period ID:</strong> {id}</p>
+      
       <Link to={`/period/${id}`}>
-        <p>View period</p>
+        <button>View Period</button>
       </Link>
-      <Link to={"/"}>
-        <p>Go home</p>
+      
+      <Link to="/">
+        <button>Go Home</button>
       </Link>
     </>
   );

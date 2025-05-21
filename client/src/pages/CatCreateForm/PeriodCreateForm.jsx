@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { createPeriod } from "../../models/Period";
+import api from "../../api"; // axios instance
 
 export default function PeriodCreateForm() {
   const [formData, setFormData] = useState({});
@@ -8,11 +8,19 @@ export default function PeriodCreateForm() {
   const navigate = useNavigate();
 
   const postForm = async () => {
-    const period = await createPeriod(formData);
-    if (period.status === 201) {
-      redirectToSuccessPage(period.payload._id);
-    } else {
-      setInfo(period.msg);
+    try {
+      const response = await api.post("/period", formData);
+      if (response.status === 201) {
+        redirectToSuccessPage(response.data.payload._id);
+      } else {
+        setInfo(response.data.msg || "Unknown error");
+      }
+    } catch (error) {
+      if (error.response) {
+        setInfo(error.response.data.msg || "Server error");
+      } else {
+        setInfo("Network error");
+      }
     }
   };
 
@@ -26,7 +34,7 @@ export default function PeriodCreateForm() {
   };
 
   const redirectToSuccessPage = (id) => {
-    return navigate(`/createdperiod/${id}`);
+    navigate(`/createdperiod/${id}`);
   };
 
   return (
@@ -42,20 +50,14 @@ export default function PeriodCreateForm() {
         />
         <input
           type="text"
-          name="description"
+          name="characteristics"
           placeholder="Short description"
           onChange={handleChange}
         />
         <input
-          type="number"
-          name="from"
-          placeholder="From year"
-          onChange={handleChange}
-        />
-        <input
-          type="number"
-          name="to"
-          placeholder="To year"
+          type="text"  // <-- changed from number to text
+          name="years"
+          placeholder="Years (e.g. 1500-1600)"
           onChange={handleChange}
         />
         <button onClick={handlePost}>Create period</button>

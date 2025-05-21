@@ -10,12 +10,12 @@ export default function MainPage() {
     <>
     <NavBar />
       <h1>Main page</h1>
-      <Link to={"/createcat"}>
+      <Link to={"/createperiod"}>
         <p class="underline">Create cat</p>
       </Link>
       <Button color="alternative">hello</Button>
       <Content />
-      <Link to={"/cats"}>
+      <Link to={"/period"}>
         <p>Cats</p>
       </Link>
     </>

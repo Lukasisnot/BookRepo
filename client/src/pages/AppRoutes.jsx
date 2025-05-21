@@ -2,10 +2,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainPage from "./MainPage/MainPage";
 import About from "./About/About";
 import PeriodCreateForm from "./CatCreateForm/PeriodCreateForm";
-import CatUpdateForm from "./CatUpdateForm/PeriodUpdateForm";
-import CatView from "./CatView/PeriodView";
-import CatList from "./CatList/PeriodList";
-import CreatedCat from "./CatCreateForm/CreatedPeriod";
+import PeriodUpdateForm from "./CatUpdateForm/PeriodUpdateForm";
+import PeriodView from "./CatView/PeriodView";
+import PeriodList from "./CatList/PeriodList";
+import CreatedPeriod from "./CatCreateForm/CreatedPeriod";
 
 
 export default function AppRoutes() {
@@ -15,11 +15,11 @@ export default function AppRoutes() {
         <Routes>
           <Route path="/" element={<MainPage />} />
           <Route path="/about" element={<About />} />
-          <Route path="/createcat" element={<PeriodCreateForm />} />
-          <Route path="/updatecat/:id" element={<CatUpdateForm />} />
-          <Route path="/cat/:id" element={<CatView />} />
-          <Route path="/cats" element={<CatList />} />
-          <Route path="/createdcat/:id" element={<CreatedCat />} />
+          <Route path="/createperiod" element={<PeriodCreateForm />} />
+          <Route path="/updateperiod/:id" element={<PeriodUpdateForm />} />
+          <Route path="/period/:id" element={<PeriodView />} />
+          <Route path="/period" element={<PeriodList />} />
+          <Route path="/createdperiod/:id" element={<CreatedPeriod />} />
           
 
         </Routes>

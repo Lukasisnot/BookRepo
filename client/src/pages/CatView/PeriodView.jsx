@@ -1,75 +1,77 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
-import {   getPeriod, deletePeriod } from "../../models/Period";
 import { useState, useEffect } from "react";
+import api from "../../api";
 
 export default function PeriodView() {
   const { id } = useParams();
-  const [cat, setCat] = useState();
+  const [period, setPeriod] = useState(null);
   const [isLoaded, setLoaded] = useState(false);
   const [info, setInfo] = useState();
-  const [formData, setFormData] = useState();
+  const [formData, setFormData] = useState("");
   const navigate = useNavigate();
 
   const load = async () => {
-    const data = await getPeriod(id);
-    if (data.status === 500 || data.status === 404) return setLoaded(null);
-    if (data.status === 200) {
-      setCat(data.payload);
-      setLoaded(true);
+    try {
+      const response = await api.get(`/period/${id}`);
+      if (response.status === 200) {
+        setPeriod(response.data.payload);
+        setLoaded(true);
+      } else if (response.status === 404) {
+        setLoaded(null);
+      }
+    } catch (error) {
+      setLoaded(null);
     }
-  }
+  };
 
   useEffect(() => {
     load();
-  }, []);
+  }, [id]);
 
-  const handleChange = (e) => {
-    setFormData(e.target.value);
-  }
+  const handleChange = (e) => setFormData(e.target.value);
 
   const handleDelete = async (e) => {
     e.preventDefault();
-    if (cat.name === formData) {
-      const data = await deletePeriod(id);
-      if (data.status === 200) {
-        navigate("/");
-      } else {
-        setInfo(data.msg);
+    if (formData === period.name) {
+      try {
+        const response = await api.delete(`/period/${id}`);
+        if (response.status === 200) {
+          navigate("/");
+        } else {
+          setInfo(response.data.msg || "Failed to delete");
+        }
+      } catch {
+        setInfo("Failed to delete");
       }
     } else {
-      setInfo("Wrong input!");
+      setInfo("Incorrect name. Please type the period name exactly.");
     }
-  }
+  };
 
-  if (isLoaded === null) {
-    return (
-      <>
-        <p>period not found</p>
-      </>
-    )
-  }
-
-  if (!isLoaded) {
-    return (
-      <>
-        <p>period is loading...</p>
-      </>
-    )
-  }
+  if (isLoaded === null) return <p>Period not found.</p>;
+  if (!isLoaded) return <p>Loading period...</p>;
 
   return (
     <>
-      <h1>period view</h1>
-      <p>{id}</p>
-      <p>{cat.name}</p>
-      <p>{cat.description}</p>
-      
-      <form>
-        <input type="text" placeholder={cat.name} onChange={handleChange} />
-        <button onClick={handleDelete}>Delete</button>
-        <p>{info}</p>
+      <h1>Period Details</h1>
+      <p><strong>ID:</strong> {id}</p>
+      <p><strong>Name:</strong> {period.name}</p>
+      <p><strong>Characteristics:</strong> {period.characteristics || "-"}</p>
+      <p><strong>Years:</strong> {period.years || "-"}</p>
+
+      <form onSubmit={handleDelete}>
+        <p>To delete, type the period name: <strong>{period.name}</strong></p>
+        <input
+          type="text"
+          placeholder="Type period name to confirm"
+          onChange={handleChange}
+          value={formData}
+        />
+        <button type="submit">Delete</button>
+        {info && <p style={{ color: "red" }}>{info}</p>}
       </form>
-      <Link to={`/updatecat/${id}`}>
+
+      <Link to={`/updateperiod/${id}`}>
         <p>Update period</p>
       </Link>
       <Link to={"/"}>

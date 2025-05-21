@@ -2,20 +2,29 @@ import { Link } from "react-router-dom";
 import PeriodLink from "./PeriodLink";
 import { useState, useEffect } from "react";
 import api from "../../api"
-import { getPeriods } from "../../models/Period";
 
 export default function PeriodList() {
   const [periods, setPeriods] = useState();
   const [isLoaded, setLoaded] = useState(false);
 
   const load = async () => {
-    const data = await api.get("/getP");
-    if (data.status === 500 || data.status === 404) return setLoaded(null);
-    if (data.status === 200) {
-      setPeriods(data.payload);
+  try {
+    const response = await api.get("/period"); // upraveno podle backendu
+    console.log("Response:", response);
+    if (response.status === 200) {
+      setPeriods(response.data.payload); // axios data je v `data`
       setLoaded(true);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching periods:", error);
+    if (error.response) {
+      if (error.response.status === 404 || error.response.status === 500) {
+        setLoaded(null);
+      }
+    }
+  }
+};
+
 
   useEffect(() => {
     load();
