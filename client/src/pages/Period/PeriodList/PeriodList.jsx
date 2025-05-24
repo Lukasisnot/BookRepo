@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import PeriodLink from "./PeriodLink";
 import { useState, useEffect } from "react";
-import api from "../../api"
+import api from "../../../api"
 
 export default function PeriodList() {
   const [periods, setPeriods] = useState();

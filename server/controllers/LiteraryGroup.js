@@ -32,7 +32,7 @@ exports.getLiteraryGroupById = async (req, res) => {
 
 exports.deleteLiteraryGroup = async (req, res) => {
   try {
-    const result = await Period.findByIdAndDelete(req.params.id);
+    const result = await LiteraryGroup.findByIdAndDelete(req.params.id);
     if (result) {
       return res.status(200).send({
         msg: "LiteraryGroup deleted",
@@ -48,10 +48,11 @@ exports.updateLiteraryGroup = async (req, res) => {
   try {
     const data = {
       name: req.body.name,
-      description: req.body.description,
+      years: req.body.years,
+      characteristics: req.body.characteristics,
       members: req.body.members,
     };
-    const result = await Period.findByIdAndUpdate(req.params.id, data);
+    const result = await LiteraryGroup.findByIdAndUpdate(req.params.id, data);
     if (result) {
       return res.status(200).send({
         msg: "LiteraryGroup updated",
@@ -70,7 +71,8 @@ exports.createLiteraryGroup = async (req, res) => {
   try {
     const data = new LiteraryGroup({
       name: req.body.name,
-      description: req.body.description,
+      years: req.body.years,
+      characteristics: req.body.characteristics,
       members: req.body.members,
     });
     const result = await data.save();

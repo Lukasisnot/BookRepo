@@ -1,15 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import api from "../../api"; // axios instance
+import api from "../../../api"; // axios instance
 
-export default function PeriodCreateForm() {
+export default function LiteraryGroupCreateForm() {
   const [formData, setFormData] = useState({});
   const [info, setInfo] = useState();
   const navigate = useNavigate();
 
   const postForm = async () => {
     try {
-      const response = await api.post("/period", formData);
+      const response = await api.post("/literary-group", formData);
       if (response.status === 201) {
         redirectToSuccessPage(response.data.payload._id);
       } else {
@@ -34,18 +34,24 @@ export default function PeriodCreateForm() {
   };
 
   const redirectToSuccessPage = (id) => {
-    navigate(`/createdperiod/${id}`);
+    navigate(`/createdliterary-group/${id}`);
   };
 
   return (
     <>
-      <h1>Create Literary Period</h1>
+      <h1>Create Literary Literary Group</h1>
       <form>
         <input
           type="text"
           name="name"
           required
-          placeholder="Enter period name"
+          placeholder="Enter LiteraryGroup name"
+          onChange={handleChange}
+        />
+        <input
+          type="text"  // <-- changed from number to text
+          name="years"
+          placeholder="Years (e.g. 1500-1600)"
           onChange={handleChange}
         />
         <input
@@ -55,12 +61,14 @@ export default function PeriodCreateForm() {
           onChange={handleChange}
         />
         <input
-          type="text"  // <-- changed from number to text
-          name="years"
-          placeholder="Years (e.g. 1500-1600)"
+          type="text"
+          name="members"
+          placeholder="members"
           onChange={handleChange}
         />
-        <button onClick={handlePost}>Create period</button>
+        
+        
+        <button onClick={handlePost}>Create LiteraryGroup</button>
       </form>
       {info && <p style={{ color: "red" }}>{info}</p>}
       <Link to={"/"}>

@@ -9,14 +9,21 @@ export default function MainPage() {
   return (
     <>
     <NavBar />
-      <h1>Main page</h1>
+      <h1>Periods</h1>
       <Link to={"/createperiod"}>
-        <p class="underline">Create cat</p>
+        <p class="underline">Create period</p>
       </Link>
       <Button color="alternative">hello</Button>
       <Content />
       <Link to={"/period"}>
-        <p>Cats</p>
+        <p>Periods</p>
+      </Link>
+      <h1>Literary groups</h1>
+       <Link to={"/createliterary-group"}>
+        <p class="underline">Create literary group</p>
+      </Link>
+      <Link to={"/literary-group"}>
+        <p>literary Groups</p>
       </Link>
     </>
   );

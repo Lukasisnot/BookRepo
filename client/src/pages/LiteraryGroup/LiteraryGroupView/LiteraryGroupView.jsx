@@ -1,10 +1,10 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import api from "../../api";
+import api from "../../../api";
 
-export default function PeriodView() {
+export default function LiteraryGroupView() {
   const { id } = useParams();
-  const [period, setPeriod] = useState(null);
+  const [LiteraryGroup, setLiteraryGroup] = useState(null);
   const [isLoaded, setLoaded] = useState(false);
   const [info, setInfo] = useState();
   const [formData, setFormData] = useState("");
@@ -12,9 +12,9 @@ export default function PeriodView() {
 
   const load = async () => {
     try {
-      const response = await api.get(`/period/${id}`);
+      const response = await api.get(`/literary-group/${id}`);
       if (response.status === 200) {
-        setPeriod(response.data.payload);
+        setLiteraryGroup(response.data.payload);
         setLoaded(true);
       } else if (response.status === 404) {
         setLoaded(null);
@@ -32,9 +32,9 @@ export default function PeriodView() {
 
   const handleDelete = async (e) => {
     e.preventDefault();
-    if (formData === period.name) {
+    if (formData === LiteraryGroup.name) {
       try {
-        const response = await api.delete(`/period/${id}`);
+        const response = await api.delete(`/literary-group/${id}`);
         if (response.status === 200) {
           navigate("/");
         } else {
@@ -44,26 +44,27 @@ export default function PeriodView() {
         setInfo("Failed to delete");
       }
     } else {
-      setInfo("Incorrect name. Please type the period name exactly.");
+      setInfo("Incorrect name. Please type the LiteraryGroup name exactly.");
     }
   };
 
-  if (isLoaded === null) return <p>Period not found.</p>;
-  if (!isLoaded) return <p>Loading period...</p>;
+  if (isLoaded === null) return <p>LiteraryGroup not found.</p>;
+  if (!isLoaded) return <p>Loading LiteraryGroup...</p>;
 
   return (
     <>
-      <h1>Period Details</h1>
+      <h1>LiteraryGroup Details</h1>
       <p><strong>ID:</strong> {id}</p>
-      <p><strong>Name:</strong> {period.name}</p>
-      <p><strong>Characteristics:</strong> {period.characteristics || "-"}</p>
-      <p><strong>Years:</strong> {period.years || "-"}</p>
+      <p><strong>Name:</strong> {LiteraryGroup.name}</p>
+      <p><strong>Years:</strong> {LiteraryGroup.years || "-"}</p>
+      <p><strong>Characteristics:</strong> {LiteraryGroup.characteristics || "-"}</p>
+      
 
       <form onSubmit={handleDelete}>
-        <p>To delete, type the period name: <strong>{period.name}</strong></p>
+        <p>To delete, type the LiteraryGroup name: <strong>{LiteraryGroup.name}</strong></p>
         <input
           type="text"
-          placeholder="Type period name to confirm"
+          placeholder="Type LiteraryGroup name to confirm"
           onChange={handleChange}
           value={formData}
         />
@@ -71,8 +72,8 @@ export default function PeriodView() {
         {info && <p style={{ color: "red" }}>{info}</p>}
       </form>
 
-      <Link to={`/updateperiod/${id}`}>
-        <p>Update period</p>
+      <Link to={`/updateliterary-group/${id}`}>
+        <p>Update LiteraryGroup</p>
       </Link>
       <Link to={"/"}>
         <p>Go back</p>
