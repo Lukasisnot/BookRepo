@@ -13,6 +13,8 @@ var indexRouter = require('./routes/index');
 var catsRouter = require('./routes/cats');
 var periodRouter = require('./routes/period');
 var literaryGroupRouter = require('./routes/LiteraryGroup');
+var authorRouter = require('./routes/author');
+
 
 
 
@@ -31,6 +33,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/cats', catsRouter);
 app.use('/api/period', periodRouter);
 app.use('/api/literary-group', literaryGroupRouter);
+app.use('/api/author', authorRouter);
+
 
 
 // catch 404 and forward to error handler

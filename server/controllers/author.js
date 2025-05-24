@@ -50,7 +50,7 @@ exports.updateAuthor = async (req, res) => {
   try {
     const data = {
       name: req.body.name,
-      information: req.body.information,
+      bio: req.body.bio,
       nationality: req.body.nationality,
       literary_group: req.body.literary_group,
       period: req.body.period,
@@ -73,7 +73,7 @@ exports.createAuthor = async (req, res) => {
   try {
     const data = new Author({
       name: req.body.name,
-      information: req.body.information,
+      bio: req.body.bio,
       nationality: req.body.nationality,
       literary_group: req.body.literary_group,
       period: req.body.period,
