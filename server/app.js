@@ -5,7 +5,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require("cors");
 const mongoose = require('mongoose');
-mongoose.connect('mongodb+srv://admin:adminadmin@cluster0.zymn1.mongodb.net/bohata?retryWrites=true&w=majority')
+mongoose.connect('mongodb+srv://admin:adminadmin@cluster0.zymn1.mongodb.net/book_repo?retryWrites=true&w=majority')
 .then(() => console.log("Database connected"))
 .catch((err) => console.log(err));
 
@@ -14,6 +14,8 @@ var catsRouter = require('./routes/cats');
 var periodRouter = require('./routes/period');
 var literaryGroupRouter = require('./routes/LiteraryGroup');
 var authorRouter = require('./routes/author');
+var bookRouter = require('./routes/book');
+
 
 
 
@@ -34,6 +36,8 @@ app.use('/cats', catsRouter);
 app.use('/api/period', periodRouter);
 app.use('/api/literary-group', literaryGroupRouter);
 app.use('/api/author', authorRouter);
+app.use('/api/book', bookRouter);
+
 
 
 

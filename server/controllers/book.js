@@ -14,9 +14,9 @@ exports.getAllBooks = async (req, res) => {
         payload: result,
       });
     }
-    res.status(404).send({ msg: "No books found" });
+    return res.status(404).send({ msg: "No books found" });
   } catch (error) {
-    res.status(500).send(error);
+    return res.status(500).send({ msg: error.message || error });
   }
 };
 
@@ -34,9 +34,9 @@ exports.getBookById = async (req, res) => {
         payload: result,
       });
     }
-    res.status(404).send({ msg: "Book not found" });
+    return res.status(404).send({ msg: "Book not found" });
   } catch (error) {
-    res.status(500).send(error);
+    return res.status(500).send({ msg: error.message || error });
   }
 };
 
@@ -47,9 +47,9 @@ exports.deleteBook = async (req, res) => {
     if (result) {
       return res.status(200).send({ msg: "Book deleted" });
     }
-    res.status(404).send({ msg: "Book not found" });
+    return res.status(404).send({ msg: "Book not found" });
   } catch (error) {
-    res.status(500).send(error);
+    return res.status(500).send({ msg: error.message || error });
   }
 };
 
@@ -60,6 +60,7 @@ exports.updateBook = async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       author: req.body.author,
+      publishedYear: req.body.publishedYear,  // Added publishedYear here
     };
 
     const result = await Book.findByIdAndUpdate(req.params.id, data, { new: true });
@@ -69,9 +70,9 @@ exports.updateBook = async (req, res) => {
         payload: result,
       });
     }
-    res.status(404).send({ msg: "Book not found" });
+    return res.status(404).send({ msg: "Book not found" });
   } catch (error) {
-    res.status(500).send(error);
+    return res.status(500).send({ msg: error.message || error });
   }
 };
 
@@ -82,6 +83,7 @@ exports.createBook = async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       author: req.body.author,
+      publishedYear: req.body.publishedYear,  // Added publishedYear here
     });
 
     const result = await data.save();
@@ -91,8 +93,8 @@ exports.createBook = async (req, res) => {
         payload: result,
       });
     }
-    res.status(500).send({ msg: "Book was not created" });
+    return res.status(500).send({ msg: "Book was not created" });
   } catch (error) {
-    res.status(500).send(error);
+    return res.status(500).send({ msg: error.message || error });
   }
 };

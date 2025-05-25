@@ -33,6 +33,14 @@ export default function MainPage() {
       <Link to={"/author"}>
         <p>authors</p>
       </Link>
+
+      <h1>Book</h1>
+       <Link to={"/createbook"}>
+        <p class="underline">Create book</p>
+      </Link>
+      <Link to={"/book"}>
+        <p>books</p>
+      </Link>
     </>
   );
 }
