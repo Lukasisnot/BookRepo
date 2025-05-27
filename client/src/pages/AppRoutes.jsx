@@ -39,6 +39,8 @@ export default function AppRoutes() {
       <Routes>
         <Route path="/" element={<MainPage2 />} />
         <Route path="/about" element={<About />} />
+        <Route path="/admin" element={<MainPage />} />
+
 
         {/* Period */}
         <Route path="/createperiod" element={<PeriodCreateForm />} />
