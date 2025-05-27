@@ -101,7 +101,7 @@ export default function AppRoutes() {
         </NavbarCollapse>
       </Navbar>
 
-      <div className="container mx-auto p-4 mt-4"> {/* Added margin-top */}
+      <div className="container m-auto bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 antialiased size-full">
         <Routes>
           {/* Auth Routes */}
           <Route path="/login" element={<LoginForm />} />

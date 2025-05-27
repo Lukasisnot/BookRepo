@@ -8,13 +8,11 @@ function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      await API.get('/logout');
+      await API.get('/user/logout');
       localStorage.removeItem('isUserLoggedIn');
-      // You might want to set a success message here using state
       navigate('/login');
     } catch (err) {
       console.error('Logout failed:', err);
-      // Handle logout error (e.g., show an alert)
     }
   };
 

@@ -1,18 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import api from "../../api";
 
-const initialBooksData = [
-  { id: 1, title: "The Alchemist's Code", author: "Nova Script", color: "bg-rose-600", borderColor: "border-rose-800", textColor: "text-yellow-100", spineColor: "bg-rose-800", tag: "Fantasy", tagColor: "bg-yellow-400 text-rose-800", slug: "#alchemists-code" },
-  { id: 2, title: "Cosmic Cartography", author: "Stella Voyager", color: "bg-sky-600", borderColor: "border-sky-800", textColor: "text-slate-100", spineColor: "bg-sky-800", tag: "Sci-Fi", tagColor: "bg-cyan-300 text-sky-800", slug: "#cosmic-cartography" },
-  { id: 3, title: "Whispers of Old Woods", author: "Sylas Evergreen", color: "bg-emerald-600", borderColor: "border-emerald-800", textColor: "text-lime-100", spineColor: "bg-emerald-800", tag: "Nature", tagColor: "bg-lime-300 text-emerald-800", slug: "#whispers-old-woods" },
-  { id: 4, title: "Quantum Explained", author: "Dr. Axiom Fields", color: "bg-violet-600", borderColor: "border-violet-800", textColor: "text-pink-100", spineColor: "bg-violet-800", tag: "Physics", tagColor: "bg-pink-300 text-violet-800", slug: "#quantum-entanglement" },
-  { id: 5, title: "Ancient Civilizations", author: "Historia Relic", color: "bg-amber-600", borderColor: "border-amber-800", textColor: "text-stone-100", spineColor: "bg-amber-800", tag: "History", tagColor: "bg-stone-300 text-amber-800", slug: "#ancient-civilizations" },
-  { id: 6, title: "The Art of Logic", author: "Ratio Nalis", color: "bg-gray-600", borderColor: "border-gray-800", textColor: "text-cyan-100", spineColor: "bg-gray-800", tag: "Philosophy", tagColor: "bg-cyan-300 text-gray-800", slug: "#art-of-logic" },
-  { id: 7, title: "Culinary Journeys", author: "Gastronome Epic", color: "bg-orange-600", borderColor: "border-orange-800", textColor: "text-yellow-100", spineColor: "bg-orange-800", tag: "Cooking", tagColor: "bg-yellow-300 text-orange-800", slug: "#culinary-journeys" },
-  { id: 8, title: "Stellar Mechanics", author: "Celestia Astra", color: "bg-indigo-600", borderColor: "border-indigo-800", textColor: "text-purple-100", spineColor: "bg-indigo-800", tag: "Astronomy", tagColor: "bg-purple-300 text-indigo-800", slug: "#stellar-mechanics" }
-];
-
-
 const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
   const bookBaseHeightMobile = 260;
   const bookBaseHeightDesktop = 300;
@@ -245,7 +233,7 @@ function AutoCenterSelectedBookPage() {
   const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20; 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 flex flex-col px-0 overflow-x-hidden antialiased">
+    <div className="min-h-screen flex flex-col px-0 overflow-x-hidden">
       <header className="w-full text-center py-8 sm:py-10 shrink-0 px-4">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 mb-2 sm:mb-3">
           The Scholar's Auto-Centering Shelf
