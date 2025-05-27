@@ -15,14 +15,9 @@ var periodRouter = require('./routes/period');
 var literaryGroupRouter = require('./routes/LiteraryGroup');
 var authorRouter = require('./routes/author');
 var bookRouter = require('./routes/book');
-
-
-
-
+var userRouter = require('./routes/user');
 
 var app = express();
-
-
 
 app.use(logger('dev'));
 app.use(cors());
@@ -31,15 +26,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
 app.use('/cats', catsRouter);
 app.use('/api/period', periodRouter);
 app.use('/api/literary-group', literaryGroupRouter);
 app.use('/api/author', authorRouter);
 app.use('/api/book', bookRouter);
-
-
-
+app.use('/api/user', userRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
