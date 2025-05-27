@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { Navbar, NavbarBrand, NavbarCollapse, NavbarLink, NavbarToggle } from 'flowbite-react'; // Import Navbar components
 
-// Your existing page components
-import MainPage from "./MainPage/MainPage";
+
+import MainPage from "./AdminPage/AdminPage";
+import MainPage2 from "./MainPage2/MainPage2";
+
 import About from "./About/About";
 
 // Period
@@ -115,16 +117,16 @@ export default function AppRoutes() {
             } 
           />
 
-          {/* Existing Public Routes */}
-          <Route path="/" element={<MainPage />} />
-          <Route path="/about" element={<About />} />
-
           {/* Period Routes - Consider if these should be protected */}
           <Route path="/createperiod" element={<ProtectedRoute><PeriodCreateForm /></ProtectedRoute>} />
           <Route path="/createdperiod/:id" element={<ProtectedRoute><CreatedPeriod /></ProtectedRoute>} />
           <Route path="/updateperiod/:id" element={<ProtectedRoute><PeriodUpdateForm /></ProtectedRoute>} />
           <Route path="/period/:id" element={<PeriodView />} /> {/* View might be public */}
           <Route path="/period" element={<PeriodList />} />   {/* List might be public */}
+
+          <Route path="/" element={<MainPage2 />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/admin" element={<MainPage />} />
 
           {/* Literary Group Routes - Consider if these should be protected */}
           <Route path="/createliterary-group" element={<ProtectedRoute><LiteraryGroupCreateForm /></ProtectedRoute>} />
