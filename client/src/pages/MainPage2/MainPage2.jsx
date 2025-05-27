@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-
+import api from "../../api";
 
 const initialBooksData = [
   { id: 1, title: "The Alchemist's Code", author: "Nova Script", color: "bg-rose-600", borderColor: "border-rose-800", textColor: "text-yellow-100", spineColor: "bg-rose-800", tag: "Fantasy", tagColor: "bg-yellow-400 text-rose-800", slug: "#alchemists-code" },
@@ -124,7 +123,72 @@ const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
 
 // Main Page Component
 function AutoCenterSelectedBookPage() {
-  const [booksData] = useState(initialBooksData);
+  
+  
+  
+  const [books, setBooks] = useState([]);
+  const [isLoaded, setLoaded] = useState(false);
+  const [error, setError] = useState(null); 
+  const [booksData, setBooksData] = useState([]);
+
+  useEffect(() => {
+    const loadBooks = async () => {
+      setLoaded(false);
+      setError(null);
+      try {
+        const response = await api.get("/book");
+        if (response.status === 200 && response.data.payload) {
+          setBooks(response.data.payload);
+          // console.log(response.data.payload);
+          // console.log(books);
+        } else {
+        
+          setBooks([]); 
+          setError("Could not retrieve books at this time.");
+        }
+      } catch (err) {
+        console.error("Error fetching books:", err);
+        if (err.response) {
+          if (err.response.status === 404) {
+            setError("No books found in the collection.");
+          } else {
+            setError(`Server error: ${err.response.status}. Please try again later.`);
+          }
+        } else if (err.request) {
+          setError("Network error. Please check your connection.");
+        } else {
+          setError("An unexpected error occurred while fetching books.");
+        }
+        setBooks([]); 
+      } finally {
+        setLoaded(true); 
+      }
+    };
+    
+    loadBooks();
+  }, []);
+
+  
+  useEffect(()=>{
+    const loadBooksData = async () => {
+      if (!isLoaded) return;
+      console.log("Books AA");
+      console.log(books);
+      
+      const getBookData = (book) => {
+        console.log(book);
+        return { id: book._id, title: book.title, author: book.author.name, color: "bg-rose-600", borderColor: "border-rose-800", textColor: "text-yellow-100", spineColor: "bg-rose-800", tag: book.publishedYear, tagColor: "bg-yellow-400 text-rose-800", slug: "#alchemists-code" }
+      };
+      setBooksData(books.map(getBookData));
+    }
+
+    loadBooksData();
+  },[books])
+
+
+
+
+  
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [isDesktop, setIsDesktop] = useState(true); 
   const bookRefs = useRef({}); 
