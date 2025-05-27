@@ -1,8 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import MainPage from "./AdminPage/AdminPage";
-import MainPage2 from "./MainPage2/MainPage2";
-
+import MainPage from "./MainPage/MainPage";
 import About from "./About/About";
 
 // Period
@@ -37,7 +35,7 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainPage2 />} />
+        <Route path="/" element={<MainPage />} />
         <Route path="/about" element={<About />} />
 
         {/* Period */}
