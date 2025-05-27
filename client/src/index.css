@@ -1,26 +1,16 @@
-@import "tailwindcss";
-@plugin "flowbite-react/plugin/tailwindcss";
-@source "../.flowbite-react/class-list.json";
+/* src/index.css */
 
-.custom-scrollbar::-webkit-scrollbar {
-  height: 10px; 
-  background-color: transparent; 
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(40, 48, 61, 0.5); 
-  border-radius: 10px;
-  margin: 0 20px; 
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.6); 
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.7); 
-}
-.custom-scrollbar {
-  scrollbar-width: thin; 
-  scrollbar-color: rgba(100, 116, 139, 0.6) rgba(40, 48, 61, 0.5); 
-} 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+  Any of your custom global styles or default styles (like :root, body, a, h1, button) 
+  should come AFTER the @tailwind directives if you want them to potentially 
+  override Tailwind's base styles or if you want to use Tailwind utility classes
+  within these global styles (though that's less common for global selectors).
+  
+  Alternatively, if these are truly meant to be defaults that Tailwind builds upon,
+  they could be before, but it's more common to have custom overrides after.
+  For now, let's keep them after.
+*/

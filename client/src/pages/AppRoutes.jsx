@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
+import { Navbar, NavbarBrand, NavbarCollapse, NavbarLink, NavbarToggle } from 'flowbite-react'; // Import Navbar components
+
 
 import MainPage from "./AdminPage/AdminPage";
 import MainPage2 from "./MainPage2/MainPage2";
@@ -33,43 +35,124 @@ import BookView from "./Book/BookView/BookView";
 import BookUpdateForm from "./Book/BookUpdateForm/BookUpdateForm";
 import BookList from "./Book/BookList/BookList";
 
+// Auth Components
+import LoginForm from '../components/LoginForm'; // Adjust path if necessary
+import RegisterForm from '../components/RegisterForm'; // Adjust path if necessary
+import Dashboard from '../components/Dashboard'; // Adjust path if necessary
+import ProtectedRoute from '../components/ProtectedRoute'; // Adjust path if necessary
+
 export default function AppRoutes() {
+  // A simple way to check login state for Navbar links
+  // In a real app, this would ideally come from a global state (Context, Redux, Zustand)
+  const isLoggedIn = localStorage.getItem('isUserLoggedIn') === 'true';
+
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainPage2 />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/admin" element={<MainPage />} />
+      <Navbar fluid rounded className="bg-gray-100 dark:bg-gray-800 shadow-md">
+        <NavbarBrand as={Link} to="/">
+          {/* Optional: Add your logo here */}
+          {/* <img src="/path-to-your-logo.svg" className="mr-3 h-6 sm:h-9" alt="Logo" /> */}
+          <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+            Book Repo
+          </span>
+        </NavbarBrand>
+        <NavbarToggle />
+        <NavbarCollapse>
+          <NavbarLink as={Link} to="/" active={window.location.pathname === '/'}>
+            Main Page
+          </NavbarLink>
+          <NavbarLink as={Link} to="/about" active={window.location.pathname === '/about'}>
+            About
+          </NavbarLink>
+          <NavbarLink as={Link} to="/period" active={window.location.pathname.startsWith('/period')}>
+            Periods
+          </NavbarLink>
+          <NavbarLink as={Link} to="/literary-group" active={window.location.pathname.startsWith('/literary-group')}>
+            Literary Groups
+          </NavbarLink>
+          <NavbarLink as={Link} to="/author" active={window.location.pathname.startsWith('/author')}>
+            Authors
+          </NavbarLink>
+          <NavbarLink as={Link} to="/book" active={window.location.pathname.startsWith('/book')}>
+            Books
+          </NavbarLink>
+          
+          {isLoggedIn ? (
+            <>
+              <NavbarLink as={Link} to="/dashboard" active={window.location.pathname === '/dashboard'}>
+                Dashboard
+              </NavbarLink>
+              {/* Logout functionality is typically in the Dashboard or a dropdown, 
+                  but you could add a direct logout link here if needed.
+                  For now, logout is handled in Dashboard.jsx */}
+            </>
+          ) : (
+            <>
+              <NavbarLink as={Link} to="/login" active={window.location.pathname === '/login'}>
+                Login
+              </NavbarLink>
+              <NavbarLink as={Link} to="/register" active={window.location.pathname === '/register'}>
+                Register
+              </NavbarLink>
+            </>
+          )}
+          {/* Optional: DarkThemeToggle from flowbite-react if you want a dark mode switch */}
+          {/* <NavbarLink><DarkThemeToggle /></NavbarLink> */}
+        </NavbarCollapse>
+      </Navbar>
 
+      <div className="container mx-auto p-4 mt-4"> {/* Added margin-top */}
+        <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/register" element={<RegisterForm />} />
+          
+          {/* Protected Dashboard Route */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
 
-        {/* Period */}
-        <Route path="/createperiod" element={<PeriodCreateForm />} />
-        <Route path="/createdperiod/:id" element={<CreatedPeriod />} />
-        <Route path="/updateperiod/:id" element={<PeriodUpdateForm />} />
-        <Route path="/period/:id" element={<PeriodView />} />
-        <Route path="/period" element={<PeriodList />} />
+          {/* Period Routes - Consider if these should be protected */}
+          <Route path="/createperiod" element={<ProtectedRoute><PeriodCreateForm /></ProtectedRoute>} />
+          <Route path="/createdperiod/:id" element={<ProtectedRoute><CreatedPeriod /></ProtectedRoute>} />
+          <Route path="/updateperiod/:id" element={<ProtectedRoute><PeriodUpdateForm /></ProtectedRoute>} />
+          <Route path="/period/:id" element={<PeriodView />} /> {/* View might be public */}
+          <Route path="/period" element={<PeriodList />} />   {/* List might be public */}
 
-        {/* Literary Group */}
-        <Route path="/createliterary-group" element={<LiteraryGroupCreateForm />} />
-        <Route path="/createdliterary-group/:id" element={<CreatedLiteraryGroup />} />
-        <Route path="/updateliterary-group/:id" element={<LiteraryGroupUpdateForm />} />
-        <Route path="/literary-group/:id" element={<LiteraryGroupView />} />
-        <Route path="/literary-group" element={<LiteraryGroupList />} />
+          <Route path="/" element={<MainPage2 />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/admin" element={<MainPage />} />
 
-        {/* Author */}
-        <Route path="/createauthor" element={<AuthorCreateForm />} />
-        <Route path="/createdauthor/:id" element={<CreatedAuthor />} />
-        <Route path="/updateauthor/:id" element={<AuthorUpdateForm />} />
-        <Route path="/author/:id" element={<AuthorView />} />
-        <Route path="/author" element={<AuthorList />} />
+          {/* Literary Group Routes - Consider if these should be protected */}
+          <Route path="/createliterary-group" element={<ProtectedRoute><LiteraryGroupCreateForm /></ProtectedRoute>} />
+          <Route path="/createdliterary-group/:id" element={<ProtectedRoute><CreatedLiteraryGroup /></ProtectedRoute>} />
+          <Route path="/updateliterary-group/:id" element={<ProtectedRoute><LiteraryGroupUpdateForm /></ProtectedRoute>} />
+          <Route path="/literary-group/:id" element={<LiteraryGroupView />} />
+          <Route path="/literary-group" element={<LiteraryGroupList />} />
 
-        {/* Book */}
-        <Route path="/createbook" element={<BookCreateForm />} />
-        <Route path="/createdbook/:id" element={<CreatedBook />} />
-        <Route path="/book/:id" element={<BookView />} />
-        <Route path="/updatebook/:id" element={<BookUpdateForm />} />
-        <Route path="/book" element={<BookList />} />
-      </Routes>
+          {/* Author Routes - Consider if these should be protected */}
+          <Route path="/createauthor" element={<ProtectedRoute><AuthorCreateForm /></ProtectedRoute>} />
+          <Route path="/createdauthor/:id" element={<ProtectedRoute><CreatedAuthor /></ProtectedRoute>} />
+          <Route path="/updateauthor/:id" element={<ProtectedRoute><AuthorUpdateForm /></ProtectedRoute>} />
+          <Route path="/author/:id" element={<AuthorView />} />
+          <Route path="/author" element={<AuthorList />} />
+
+          {/* Book Routes - Consider if these should be protected */}
+          <Route path="/createbook" element={<ProtectedRoute><BookCreateForm /></ProtectedRoute>} />
+          <Route path="/createdbook/:id" element={<ProtectedRoute><CreatedBook /></ProtectedRoute>} />
+          <Route path="/updatebook/:id" element={<ProtectedRoute><BookUpdateForm /></ProtectedRoute>} />
+          <Route path="/book/:id" element={<BookView />} />
+          <Route path="/book" element={<BookList />} />
+
+          {/* Fallback for unknown paths - good to have */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }
