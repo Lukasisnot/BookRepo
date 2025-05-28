@@ -45,8 +45,6 @@ export default function AppRoutes() {
   // A simple way to check login state for Navbar links
   // In a real app, this would ideally come from a global state (Context, Redux, Zustand)
   const isLoggedIn = localStorage.getItem('isUserLoggedIn') === 'true';
-  const userRole = localStorage.getItem('userRole');
-const isAdmin = userRole === 'admin';
 
   return (
     <BrowserRouter>
@@ -79,25 +77,25 @@ const isAdmin = userRole === 'admin';
             Books
           </NavbarLink>
           
-         {isLoggedIn ? (
-  <>
-    {isAdmin && (
-      <NavbarLink as={Link} to="/dashboard" active={window.location.pathname === '/dashboard'}>
-        Dashboard
-      </NavbarLink>
-    )}
-  </>
-) : (
-  <>
-    <NavbarLink as={Link} to="/login" active={window.location.pathname === '/login'}>
-      Login
-    </NavbarLink>
-    <NavbarLink as={Link} to="/register" active={window.location.pathname === '/register'}>
-      Register
-    </NavbarLink>
-  </>
-)}
-
+          {isLoggedIn ? (
+            <>
+              <NavbarLink as={Link} to="/dashboard" active={window.location.pathname === '/dashboard'}>
+                Dashboard
+              </NavbarLink>
+              {/* Logout functionality is typically in the Dashboard or a dropdown, 
+                  but you could add a direct logout link here if needed.
+                  For now, logout is handled in Dashboard.jsx */}
+            </>
+          ) : (
+            <>
+              <NavbarLink as={Link} to="/login" active={window.location.pathname === '/login'} className="text-indigo-500">
+                Login
+              </NavbarLink>
+              <NavbarLink as={Link} to="/register" active={window.location.pathname === '/register'} className="text-indigo-500">
+                Register
+              </NavbarLink>
+            </>
+          )}
           {/* Optional: DarkThemeToggle from flowbite-react if you want a dark mode switch */}
           {/* <NavbarLink><DarkThemeToggle /></NavbarLink> */}
         </NavbarCollapse>
