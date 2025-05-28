@@ -101,8 +101,15 @@ export default function AppRoutes() {
         </NavbarCollapse>
       </Navbar>
 
-      <div className="container m-auto bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 antialiased size-full">
+      <div className="w-full"> {/* Removed container, m-auto, bg-gradient, size-full, antialiased */}
         <Routes>
+          {/* All your <Route> components go here */}
+          <Route path="/" element={<MainPage2 />} />
+          <Route path="/about" element={<About />} />
+          {/* ... other routes ... */}
+          <Route path="/admin" element={<MainPage />} /> {/* Assuming MainPage is AutoCenterSelectedBookPage */}
+
+
           {/* Auth Routes */}
           <Route path="/login" element={<LoginForm />} />
           <Route path="/register" element={<RegisterForm />} />

@@ -1,16 +1,20 @@
-/* src/index.css */
-
+/* src/index.css (or your global stylesheet) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 
-  Any of your custom global styles or default styles (like :root, body, a, h1, button) 
-  should come AFTER the @tailwind directives if you want them to potentially 
-  override Tailwind's base styles or if you want to use Tailwind utility classes
-  within these global styles (though that's less common for global selectors).
-  
-  Alternatively, if these are truly meant to be defaults that Tailwind builds upon,
-  they could be before, but it's more common to have custom overrides after.
-  For now, let's keep them after.
-*/
+body {
+  @apply bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 antialiased text-slate-100; /* Or your desired default text color */
+  margin: 0; /* Reset default body margin */
+  padding: 0; /* Reset default body padding */
+  min-height: 100vh; /* Ensure body takes at least full viewport height */
+  width: 100%; /* Ensure body takes full viewport width */
+  overflow-x: hidden; /* Prevent accidental horizontal scroll on body */
+}
+
+/* Optional: Ensure the React root element also allows for full height layouts */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
