@@ -57,7 +57,7 @@ const BookOpenIcon = () => (
 );
 
 
-export default function MainPage() {
+export default function AdminPage() {
  
 
   return (
