@@ -48,32 +48,32 @@ export default function AppRoutes() {
 
   return (
     <BrowserRouter>
-      <Navbar fluid rounded className="bg-gray-100 dark:bg-gray-800 shadow-md">
+      <Navbar fluid rounded className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 border-b-2 border-indigo-500">
         <NavbarBrand as={Link} to="/">
           {/* Optional: Add your logo here */}
           {/* <img src="/path-to-your-logo.svg" className="mr-3 h-6 sm:h-9" alt="Logo" /> */}
-          <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+          <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white text-indigo-500">
             Book Repo
           </span>
         </NavbarBrand>
         <NavbarToggle />
         <NavbarCollapse>
-          <NavbarLink as={Link} to="/" active={window.location.pathname === '/'}>
+          <NavbarLink as={Link} to="/" active={window.location.pathname === '/'} className="text-indigo-500">
             Main Page
           </NavbarLink>
-          <NavbarLink as={Link} to="/about" active={window.location.pathname === '/about'}>
+          <NavbarLink as={Link} to="/about" active={window.location.pathname === '/about'} className="text-indigo-500">
             About
           </NavbarLink>
-          <NavbarLink as={Link} to="/period" active={window.location.pathname.startsWith('/period')}>
+          <NavbarLink as={Link} to="/period" active={window.location.pathname.startsWith('/period')} className="text-indigo-500">
             Periods
           </NavbarLink>
-          <NavbarLink as={Link} to="/literary-group" active={window.location.pathname.startsWith('/literary-group')}>
+          <NavbarLink as={Link} to="/literary-group" active={window.location.pathname.startsWith('/literary-group')} className="text-indigo-500">
             Literary Groups
           </NavbarLink>
-          <NavbarLink as={Link} to="/author" active={window.location.pathname.startsWith('/author')}>
+          <NavbarLink as={Link} to="/author" active={window.location.pathname.startsWith('/author')} className="text-indigo-500">
             Authors
           </NavbarLink>
-          <NavbarLink as={Link} to="/book" active={window.location.pathname.startsWith('/book')}>
+          <NavbarLink as={Link} to="/book" active={window.location.pathname.startsWith('/book')} className="text-indigo-500">
             Books
           </NavbarLink>
           
@@ -88,10 +88,10 @@ export default function AppRoutes() {
             </>
           ) : (
             <>
-              <NavbarLink as={Link} to="/login" active={window.location.pathname === '/login'}>
+              <NavbarLink as={Link} to="/login" active={window.location.pathname === '/login'} className="text-indigo-500">
                 Login
               </NavbarLink>
-              <NavbarLink as={Link} to="/register" active={window.location.pathname === '/register'}>
+              <NavbarLink as={Link} to="/register" active={window.location.pathname === '/register'} className="text-indigo-500">
                 Register
               </NavbarLink>
             </>
