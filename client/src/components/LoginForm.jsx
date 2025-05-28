@@ -1,104 +1,71 @@
-import React, { useState } from 'react';
+// src/components/LoginForm.jsx
+import React, { useState, useEffect } from 'react';
 import { TextInput, Button, Label, Card, Alert } from 'flowbite-react';
 import { HiMail, HiLockClosed, HiInformationCircle } from 'react-icons/hi';
-import API from '../api';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Link } from 'react-router-dom'; // useNavigate removed, AppRoutes will handle navigation
 
-function LoginForm() {
+// Props will be passed from AppRoutes:
+// handleLogin (function), authLoading (boolean), authError (string | null)
+function LoginForm({ handleLogin, authLoading, authError, clearAuthError }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); // Initialize navigate
+  const [formError, setFormError] = useState(''); // Local form validation error
+  const [successMessage, setSuccessMessage] = useState('');
 
-  // You might want to lift this state up or use Context/Redux for a real app
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  useEffect(() => {
+    // Clear any persistent authError from AppRoutes when form fields change
+    if (authError) {
+      clearAuthError();
+    }
+    setFormError(''); // Also clear local form error
+  }, [email, password, authError, clearAuthError]);
 
-  const handleSubmit = async (e) => {
+
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
+    setFormError('');
+    setSuccessMessage('');
 
-    try {
-      const response = await API.post('/user/login', { email, password });
-      setSuccess(response.data.message);
-      setIsLoggedIn(true); // Update login state
-      // Store token or user info if needed (backend sends httpOnly cookie, so frontend doesn't store token itself)
-      // For example, you could store a flag in localStorage:
-      localStorage.setItem('isUserLoggedIn', 'true'); 
-      
-      
-      // Optionally, redirect to a dashboard or home page
-      // navigate('/dashboard'); // Example redirect
-      console.log("Login successful, cookie should be set by server.");
-    } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
-      setIsLoggedIn(false);
-      localStorage.removeItem('isUserLoggedIn');
-    } finally {
-      setLoading(false);
+    if (!email || !password) {
+      setFormError("Email and password are required.");
+      return;
+    }
+
+    const result = await handleLogin(email, password); // handleLogin is from AppRoutes
+
+    if (result && result.success) {
+      setSuccessMessage(result.message || "Login successful! Redirecting...");
+      // Navigation is handled by AppRoutes after user state is set
+    } else if (result && result.error) {
+      setFormError(result.error); // Show error from login attempt
+    } else if (!authError) { // Fallback if result is undefined but no authError from context
+      setFormError("Login failed. Please try again.");
     }
   };
-
-  // Simple logout function (for demonstration)
-  const handleLogout = async () => {
-    try {
-      await API.get('/user/logout'); // Assuming your logout endpoint is GET /logout
-      setSuccess('Logged out successfully.');
-      setIsLoggedIn(false);
-      localStorage.removeItem('isUserLoggedIn');
-      setEmail(''); // Clear fields on logout
-      setPassword('');
-    } catch (err) {
-      setError('Logout failed. Please try again.');
-    }
-  };
-
-  if (isLoggedIn || localStorage.getItem('isUserLoggedIn') === 'true') {
-    return (
-      <Card className="max-w-md mx-auto mt-10 text-center">
-        <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Welcome!
-        </h5>
-        <p className="font-normal text-gray-700 dark:text-gray-400">
-          You are logged in.
-        </p>
-        {success && (
-          <Alert color="success" icon={HiInformationCircle} className="mt-4">
-            <span>
-              <span className="font-medium">Success!</span> {success}
-            </span>
-          </Alert>
-        )}
-        <Button onClick={handleLogout} color="purple" className="mt-4">
-          Logout
-        </Button>
-      </Card>
-    );
-  }
+  
+  // authError comes from AppRoutes, potentially from initial load or previous actions
+  const displayError = formError || authError;
 
   return (
     <Card className="max-w-md mx-auto mt-10">
       <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white text-center">
         Login to your Account
       </h5>
-      {error && (
-        <Alert color="failure" icon={HiInformationCircle}>
+      {displayError && (
+        <Alert color="failure" icon={HiInformationCircle} className="mt-2">
           <span>
-            <span className="font-medium">Error!</span> {error}
+            <span className="font-medium">Error!</span> {displayError}
           </span>
         </Alert>
       )}
-      {success && !isLoggedIn && ( // Show success only if not yet redirected/showing welcome
-        <Alert color="success" icon={HiInformationCircle}>
+      {successMessage && !displayError && ( // Show success only if no error
+        <Alert color="success" icon={HiInformationCircle} className="mt-2">
           <span>
-            <span className="font-medium">Success!</span> {success}
+            <span className="font-medium">Success!</span> {successMessage}
           </span>
         </Alert>
       )}
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-4 mt-4" onSubmit={onSubmit}>
         <div>
           <div className="mb-2 block">
             <Label htmlFor="email-login" value="Your email" />
@@ -111,7 +78,7 @@ function LoginForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
+            disabled={authLoading}
           />
         </div>
         <div>
@@ -125,10 +92,10 @@ function LoginForm() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
+            disabled={authLoading}
           />
         </div>
-        <Button type="submit" isProcessing={loading} disabled={loading}>
+        <Button type="submit" isProcessing={authLoading} disabled={authLoading}>
           Login
         </Button>
         <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
