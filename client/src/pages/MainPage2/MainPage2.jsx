@@ -188,6 +188,7 @@ function AutoCenterSelectedBookPage() {
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null); 
   const [booksData, setBooksData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -291,7 +292,7 @@ function AutoCenterSelectedBookPage() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (selectedBookId !== null && !event.target.closest('[role="button"], [aria-label^="Close"], [aria-label^="Read more"]')) {
+      if (selectedBookId !== null && !event.target.closest('[role="button"], [aria-label^="Close"], [aria-label^="Read more"], input[type="text"]')) {
         deselectBook();
       }
     };
@@ -299,18 +300,35 @@ function AutoCenterSelectedBookPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [selectedBookId, deselectBook]);
 
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+    setSelectedBookId(null); // Deselect book when search term changes
+  };
+
+  const filteredBooksData = useMemo(() => {
+    if (!searchTerm) {
+      return booksData;
+    }
+    return booksData.filter(book =>
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [booksData, searchTerm]);
+
+
   const desktopBookPopUpHeight = 48; 
   const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20; 
 
   if (!isLoaded && !error) {
-    return <div className="min-h-screen flex items-center justify-center text-slate-100">Loading books...</div>; {/* Keep text color for loading/error */}
+    return <div className="min-h-screen flex items-center justify-center text-slate-100">Loading books...</div>;
   }
-  if (error) {
-    return <div className="min-h-screen flex items-center justify-center text-red-400">{error}</div>;
+  if (error && booksData.length === 0) { // Show error only if no books data to fallback to
+    return <div className="min-h-screen flex items-center justify-center text-red-400 text-center px-4">{error}</div>;
   }
 
+
   return (
-    <div className="min-h-screen flex flex-col px-0 overflow-x-hidden text-slate-100"> {/* REMOVED bg-slate-800 */}
+    <div className="min-h-screen flex flex-col px-0 overflow-x-hidden text-slate-100">
       <header className="w-full text-center py-8 sm:py-10 shrink-0 px-4">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 mb-2 sm:mb-3">
           The Scholar's Auto-Centering Shelf
@@ -318,10 +336,23 @@ function AutoCenterSelectedBookPage() {
         <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
           {selectedBookId && selectedBookDetails ? 
             <>Selected: <span className="font-semibold text-sky-300">{selectedBookDetails.title}</span>.</> :
-            "Explore the collection. Click a book to select it."
+            "Explore the collection. Click a book to select it or search below."
           }
         </p>
       </header>
+
+      {/* Search Bar */}
+      <div className="w-full max-w-lg mx-auto mb-6 sm:mb-8 px-4">
+        <input
+          type="text"
+          placeholder="Search books by title or author..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-full px-4 py-3 text-sm border border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-700 text-slate-100 placeholder-slate-400 outline-none transition-colors"
+          aria-label="Search books"
+        />
+      </div>
+
 
       {selectedBookId && (
         <button
@@ -334,10 +365,20 @@ function AutoCenterSelectedBookPage() {
       )}
 
       <main className="flex-grow flex flex-col items-center justify-center w-full px-2 sm:px-4">
-        {booksData.length === 0 && isLoaded && !error && (
-            <p className="text-slate-400">No books available in the collection.</p>
+        {/* Display error here as well if it persists but some books might be loaded */}
+        {error && booksData.length > 0 && (
+             <p className="text-red-400 mb-4 text-center">{error} (Showing cached/previous data if available)</p>
         )}
-        {booksData.length > 0 && (
+
+        {filteredBooksData.length === 0 && isLoaded && !error && (
+            <p className="text-slate-400 py-10">
+              {searchTerm 
+                ? `No books found matching "${searchTerm}".` 
+                : "No books available in the collection."
+              }
+            </p>
+        )}
+        {filteredBooksData.length > 0 && (
           <div
             className={`
               relative 
@@ -352,7 +393,7 @@ function AutoCenterSelectedBookPage() {
               paddingBottom: `${desktopContainerVerticalPadding}px` 
             } : {}}
           >
-            {booksData.map((book) => {
+            {filteredBooksData.map((book) => {
               if (!bookRefs.current[book.id]) {
                 bookRefs.current[book.id] = React.createRef();
               }
