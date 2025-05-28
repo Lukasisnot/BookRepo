@@ -29,6 +29,7 @@ function LoginForm() {
       // For example, you could store a flag in localStorage:
       localStorage.setItem('isUserLoggedIn', 'true'); 
       
+      
       // Optionally, redirect to a dashboard or home page
       // navigate('/dashboard'); // Example redirect
       console.log("Login successful, cookie should be set by server.");
@@ -71,7 +72,7 @@ function LoginForm() {
             </span>
           </Alert>
         )}
-        <Button onClick={handleLogout} color="failure" className="mt-4">
+        <Button onClick={handleLogout} color="purple" className="mt-4">
           Logout
         </Button>
       </Card>
