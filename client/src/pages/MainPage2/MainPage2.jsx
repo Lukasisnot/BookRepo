@@ -186,8 +186,6 @@ function AutoCenterSelectedBookPage() {
   
   const [books, setBooks] = useState([]);
   const [isLoaded, setLoaded] = useState(false);
-  // const [booksColors, setBooksColors] = useState([]); // Unused state
-  // const [colorsLoaded, setColorsLoaded] = useState(false); // Unused state
   const [error, setError] = useState(null); 
   const [booksData, setBooksData] = useState([]);
 
@@ -226,7 +224,7 @@ function AutoCenterSelectedBookPage() {
   }, []);
   
   useEffect(() => {
-    const loadBooksData = () => { // Removed async as it's not needed
+    const loadBooksData = () => { 
       if (!isLoaded || books.length === 0) { 
         if (isLoaded && books.length === 0 && !error) { 
             setBooksData([]);
@@ -248,13 +246,12 @@ function AutoCenterSelectedBookPage() {
           spineColor: selectedPalette.spineColor,
           tag: book.publishedYear, 
           tagColor: selectedPalette.tagColor, 
-          slug: `#book-${book._id}` // Example slug
+          slug: `#book-${book._id}` 
         };
       };
 
       const newBooksData = books.map(getBookData); 
       setBooksData(newBooksData);
-      // console.log("Processed Books Data:", newBooksData); // Log newBooksData for accuracy
     };
     
     loadBooksData();
@@ -306,14 +303,14 @@ function AutoCenterSelectedBookPage() {
   const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20; 
 
   if (!isLoaded && !error) {
-    return <div className="min-h-screen flex items-center justify-center text-white">Loading books...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-slate-100">Loading books...</div>; {/* Keep text color for loading/error */}
   }
   if (error) {
     return <div className="min-h-screen flex items-center justify-center text-red-400">{error}</div>;
   }
 
   return (
-    <div className="min-h-screen flex flex-col px-0 overflow-x-hidden bg-slate-800 text-slate-100"> {/* Added base bg and text color */}
+    <div className="min-h-screen flex flex-col px-0 overflow-x-hidden text-slate-100"> {/* REMOVED bg-slate-800 */}
       <header className="w-full text-center py-8 sm:py-10 shrink-0 px-4">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 mb-2 sm:mb-3">
           The Scholar's Auto-Centering Shelf
@@ -347,7 +344,7 @@ function AutoCenterSelectedBookPage() {
               flex 
               ${isDesktop 
                   ? 'flex-row items-end overflow-x-auto overflow-y-visible custom-scrollbar px-8 max-w-6xl' 
-                  : 'flex-col items-center justify-center pt-10 pb-5 w-full' // Added w-full for mobile
+                  : 'flex-col items-center justify-center pt-10 pb-5 w-full'
               } 
             `}
             style={isDesktop ? { 
