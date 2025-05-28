@@ -1,7 +1,78 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import api from "../../api";
 
+// Color palettes for the books
+const colorPalettes = [
+  {
+    name: "Rose/Yellow",
+    color: "bg-rose-600",
+    borderColor: "border-rose-800",
+    textColor: "text-yellow-100",
+    spineColor: "bg-rose-800",
+    tagColor: "bg-yellow-400 text-rose-800",
+  },
+  {
+    name: "Sky/Teal",
+    color: "bg-sky-600",
+    borderColor: "border-sky-800",
+    textColor: "text-neutral-100",
+    spineColor: "bg-sky-800",
+    tagColor: "bg-teal-300 text-sky-900",
+  },
+  {
+    name: "Emerald/Lime",
+    color: "bg-emerald-600",
+    borderColor: "border-emerald-800",
+    textColor: "text-lime-100",
+    spineColor: "bg-emerald-800",
+    tagColor: "bg-lime-300 text-emerald-900",
+  },
+  {
+    name: "Purple/Indigo",
+    color: "bg-purple-600",
+    borderColor: "border-purple-800",
+    textColor: "text-indigo-100",
+    spineColor: "bg-purple-800",
+    tagColor: "bg-indigo-300 text-purple-900",
+  },
+  {
+    name: "Orange/Amber",
+    color: "bg-orange-500",
+    borderColor: "border-orange-700",
+    textColor: "text-amber-100",
+    spineColor: "bg-orange-700",
+    tagColor: "bg-amber-300 text-orange-900",
+  },
+  {
+    name: "Slate/Cyan",
+    color: "bg-slate-600",
+    borderColor: "border-slate-800",
+    textColor: "text-cyan-100",
+    spineColor: "bg-slate-800",
+    tagColor: "bg-cyan-400 text-slate-900",
+  },
+  {
+    name: "Fuchsia/Pink",
+    color: "bg-fuchsia-600",
+    borderColor: "border-fuchsia-800",
+    textColor: "text-pink-100",
+    spineColor: "bg-fuchsia-800",
+    tagColor: "bg-pink-300 text-fuchsia-900",
+  },
+  {
+    name: "Green/Yellow",
+    color: "bg-green-600",
+    borderColor: "border-green-800",
+    textColor: "text-yellow-50",
+    spineColor: "bg-green-800",
+    tagColor: "bg-yellow-400 text-green-900",
+  }
+];
+
+
+// ... (Book component remains the same) ...
 const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
+  // ... existing Book component code ...
   const bookBaseHeightMobile = 260;
   const bookBaseHeightDesktop = 300;
 
@@ -109,15 +180,15 @@ const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
   );
 };
 
+
 // Main Page Component
 function AutoCenterSelectedBookPage() {
-  
-  
   
   const [books, setBooks] = useState([]);
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null); 
   const [booksData, setBooksData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -127,10 +198,7 @@ function AutoCenterSelectedBookPage() {
         const response = await api.get("/book");
         if (response.status === 200 && response.data.payload) {
           setBooks(response.data.payload);
-          // console.log(response.data.payload);
-          // console.log(books);
         } else {
-        
           setBooks([]); 
           setError("Could not retrieve books at this time.");
         }
@@ -155,28 +223,41 @@ function AutoCenterSelectedBookPage() {
     
     loadBooks();
   }, []);
-
   
-  useEffect(()=>{
-    const loadBooksData = async () => {
-      if (!isLoaded) return;
-      console.log("Books AA");
-      console.log(books);
-      
+  useEffect(() => {
+    const loadBooksData = () => { 
+      if (!isLoaded || books.length === 0) { 
+        if (isLoaded && books.length === 0 && !error) { 
+            setBooksData([]);
+        }
+        return;
+      }
+
       const getBookData = (book) => {
-        console.log(book);
-        return { id: book._id, title: book.title, author: book.author.name, color: "bg-rose-600", borderColor: "border-rose-800", textColor: "text-yellow-100", spineColor: "bg-rose-800", tag: book.publishedYear, tagColor: "bg-yellow-400 text-rose-800", slug: "#alchemists-code" }
+        const randomIndex = Math.floor(Math.random() * colorPalettes.length);
+        const selectedPalette = colorPalettes[randomIndex];
+
+        return {
+          id: book._id, 
+          title: book.title, 
+          author: book.author.name, 
+          color: selectedPalette.color,
+          borderColor: selectedPalette.borderColor,
+          textColor: selectedPalette.textColor,
+          spineColor: selectedPalette.spineColor,
+          tag: book.publishedYear, 
+          tagColor: selectedPalette.tagColor, 
+          slug: `#book-${book._id}` 
+        };
       };
-      setBooksData(books.map(getBookData));
-    }
 
+      const newBooksData = books.map(getBookData); 
+      setBooksData(newBooksData);
+    };
+    
     loadBooksData();
-  },[books])
+  }, [books, isLoaded, error]); 
 
-
-
-
-  
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [isDesktop, setIsDesktop] = useState(true); 
   const bookRefs = useRef({}); 
@@ -192,24 +273,14 @@ function AutoCenterSelectedBookPage() {
     const newSelectedId = selectedBookId === bookId ? null : bookId; 
     setSelectedBookId(newSelectedId);
 
-    if (newSelectedId && bookElementRef && bookElementRef.current && isDesktop) {
-     
+    if (newSelectedId && bookElementRef && bookElementRef.current) {
       setTimeout(() => { 
         bookElementRef.current.scrollIntoView({
           behavior: 'smooth',
-          block: 'nearest', 
-          inline: 'center'  
+          block: isDesktop ? 'nearest' : 'center', 
+          inline: isDesktop ? 'center' : 'nearest'  
         });
       }, 50); 
-    } else if (newSelectedId && bookElementRef && bookElementRef.current && !isDesktop) {
-       
-        setTimeout(() => {
-            bookElementRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center', 
-                inline: 'nearest' 
-            });
-        }, 50);
     }
   }, [selectedBookId, isDesktop]);
 
@@ -221,7 +292,7 @@ function AutoCenterSelectedBookPage() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (selectedBookId !== null && !event.target.closest('[role="button"], [aria-label^="Close"], [aria-label^="Read more"]')) {
+      if (selectedBookId !== null && !event.target.closest('[role="button"], [aria-label^="Close"], [aria-label^="Read more"], input[type="text"]')) {
         deselectBook();
       }
     };
@@ -229,11 +300,35 @@ function AutoCenterSelectedBookPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [selectedBookId, deselectBook]);
 
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+    setSelectedBookId(null); // Deselect book when search term changes
+  };
+
+  const filteredBooksData = useMemo(() => {
+    if (!searchTerm) {
+      return booksData;
+    }
+    return booksData.filter(book =>
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [booksData, searchTerm]);
+
+
   const desktopBookPopUpHeight = 48; 
   const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20; 
 
+  if (!isLoaded && !error) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-100">Loading books...</div>;
+  }
+  if (error && booksData.length === 0) { // Show error only if no books data to fallback to
+    return <div className="min-h-screen flex items-center justify-center text-red-400 text-center px-4">{error}</div>;
+  }
+
+
   return (
-    <div className="min-h-screen flex flex-col px-0 overflow-x-hidden">
+    <div className="min-h-screen flex flex-col px-0 overflow-x-hidden text-slate-100">
       <header className="w-full text-center py-8 sm:py-10 shrink-0 px-4">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 mb-2 sm:mb-3">
           The Scholar's Auto-Centering Shelf
@@ -241,10 +336,23 @@ function AutoCenterSelectedBookPage() {
         <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
           {selectedBookId && selectedBookDetails ? 
             <>Selected: <span className="font-semibold text-sky-300">{selectedBookDetails.title}</span>.</> :
-            "Explore the collection. Click a book to select it."
+            "Explore the collection. Click a book to select it or search below."
           }
         </p>
       </header>
+
+      {/* Search Bar */}
+      <div className="w-full max-w-lg mx-auto mb-6 sm:mb-8 px-4">
+        <input
+          type="text"
+          placeholder="Search books by title or author..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-full px-4 py-3 text-sm border border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-700 text-slate-100 placeholder-slate-400 outline-none transition-colors"
+          aria-label="Search books"
+        />
+      </div>
+
 
       {selectedBookId && (
         <button
@@ -257,37 +365,51 @@ function AutoCenterSelectedBookPage() {
       )}
 
       <main className="flex-grow flex flex-col items-center justify-center w-full px-2 sm:px-4">
-        <div
-          className={`
-            relative 
-            flex 
-            ${isDesktop 
-                ? 'flex-row items-end overflow-x-auto overflow-y-visible custom-scrollbar px-8 max-w-6xl' 
-                : 'flex-col items-center justify-center pt-10 pb-5'
-            } 
-          `}
-          style={isDesktop ? { 
-            paddingTop: `${desktopContainerVerticalPadding}px`, 
-            paddingBottom: `${desktopContainerVerticalPadding}px` 
-          } : {}}
-        >
-          {booksData.map((book) => {
-         
-            if (!bookRefs.current[book.id]) {
-              bookRefs.current[book.id] = React.createRef();
-            }
-            return (
-              <Book
-                key={book.id}
-                book={book}
-                onBookClick={handleBookClick}
-                isSelected={selectedBookId === book.id}
-                isDesktop={isDesktop}
-                bookRef={bookRefs.current[book.id]} 
-              />
-            );
-          })}
-        </div>
+        {/* Display error here as well if it persists but some books might be loaded */}
+        {error && booksData.length > 0 && (
+             <p className="text-red-400 mb-4 text-center">{error} (Showing cached/previous data if available)</p>
+        )}
+
+        {filteredBooksData.length === 0 && isLoaded && !error && (
+            <p className="text-slate-400 py-10">
+              {searchTerm 
+                ? `No books found matching "${searchTerm}".` 
+                : "No books available in the collection."
+              }
+            </p>
+        )}
+        {filteredBooksData.length > 0 && (
+          <div
+            className={`
+              relative 
+              flex 
+              ${isDesktop 
+                  ? 'flex-row items-end overflow-x-auto overflow-y-visible custom-scrollbar px-8 max-w-6xl' 
+                  : 'flex-col items-center justify-center pt-10 pb-5 w-full'
+              } 
+            `}
+            style={isDesktop ? { 
+              paddingTop: `${desktopContainerVerticalPadding}px`, 
+              paddingBottom: `${desktopContainerVerticalPadding}px` 
+            } : {}}
+          >
+            {filteredBooksData.map((book) => {
+              if (!bookRefs.current[book.id]) {
+                bookRefs.current[book.id] = React.createRef();
+              }
+              return (
+                <Book
+                  key={book.id}
+                  book={book}
+                  onBookClick={handleBookClick}
+                  isSelected={selectedBookId === book.id}
+                  isDesktop={isDesktop}
+                  bookRef={bookRefs.current[book.id]} 
+                />
+              );
+            })}
+          </div>
+        )}
       </main>
 
       <footer className="w-full text-center py-6 shrink-0 px-4">
@@ -298,4 +420,3 @@ function AutoCenterSelectedBookPage() {
 }
 
 export default AutoCenterSelectedBookPage;
-
