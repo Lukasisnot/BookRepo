@@ -1,23 +1,22 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import api from "../../../api";
-
+import SearchBar from "../../../components/SearchBar";
 
 const BookLinkPlaceholder = ({ _id, title, author, publishedYear }) => (
   <Link
-    to={`/book/${_id}`} 
+    to={`/book/${_id}`}
     className="block p-5 sm:p-6 bg-slate-800/80 hover:bg-slate-700/90 rounded-lg shadow-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-900"
   >
     <h3 className="text-xl font-semibold text-sky-300 mb-1 truncate">{title}</h3>
     <p className="text-sm text-slate-400 mb-0.5 truncate">
-      By: {author?.name || author || "Unknown Author"}
+      By: {author?.name || (typeof author === 'string' ? author : "Unknown Author")}
     </p>
     {publishedYear && (
       <p className="text-xs text-slate-500">Published: {publishedYear}</p>
     )}
   </Link>
 );
-
 
 const LoadingSpinner = () => (
   <svg className="animate-spin h-10 w-10 text-sky-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -27,21 +26,24 @@ const LoadingSpinner = () => (
 );
 
 export default function BookList() {
-  const [books, setBooks] = useState([]); 
+  const [rawBooks, setRawBooks] = useState([]); // All books fetched from API
+  const [displayedBooks, setDisplayedBooks] = useState([]); // Books to render (filtered or all)
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
   const [isLoaded, setLoaded] = useState(false);
-  const [error, setError] = useState(null); 
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadBooks = async () => {
       setLoaded(false);
       setError(null);
+      setRawBooks([]); // Clear previous books
+      setDisplayedBooks([]); // Clear displayed books
       try {
         const response = await api.get("/book");
         if (response.status === 200 && response.data.payload) {
-          setBooks(response.data.payload);
+          setRawBooks(response.data.payload);
+          // SearchBar will handle initial population of displayedBooks via onSearchResults
         } else {
-        
-          setBooks([]); 
           setError("Could not retrieve books at this time.");
         }
       } catch (err) {
@@ -57,19 +59,21 @@ export default function BookList() {
         } else {
           setError("An unexpected error occurred while fetching books.");
         }
-        setBooks([]); 
       } finally {
-        setLoaded(true); 
+        setLoaded(true);
       }
     };
 
     loadBooks();
   }, []);
 
+  const handleSearchResults = useCallback((results, term) => {
+    setDisplayedBooks(results);
+    setActiveSearchTerm(term);
+  }, []);
 
   return (
     <>
-      
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 pb-12 antialiased">
         <div className="pt-20 sm:pt-24">
           <header className="text-center mb-10 sm:mb-12">
@@ -80,6 +84,18 @@ export default function BookList() {
               Browse through our collected tomes.
             </p>
           </header>
+
+          {/* Search Bar Integration */}
+          {isLoaded && (rawBooks.length > 0 || activeSearchTerm) && !error && ( // Show search if books loaded or if user is trying to search an empty list
+             <SearchBar
+                dataSource={rawBooks} 
+                searchKeys={['title', 'publishedYear', 'author.name']}
+                onSearchResults={handleSearchResults}
+                placeholder="Search by title, author or year..."
+                ariaLabel="Search books in the library"
+             />
+          )}
+
 
           {!isLoaded && (
             <div className="text-center py-10">
@@ -94,13 +110,13 @@ export default function BookList() {
               <p className="text-sm">{error}</p>
             </div>
           )}
-          
-          {isLoaded && !error && books.length === 0 && (
-             <div className="max-w-xl mx-auto bg-slate-800/70 text-slate-300 px-6 py-8 rounded-lg text-center shadow-xl">
+
+          {isLoaded && !error && rawBooks.length === 0 && !activeSearchTerm && (
+            <div className="max-w-xl mx-auto bg-slate-800/70 text-slate-300 px-6 py-8 rounded-lg text-center shadow-xl">
               <h2 className="text-2xl font-semibold text-sky-400 mb-3">The Shelves Are Bare</h2>
               <p className="mb-6">No books found in the collection at this moment.</p>
               <Link
-                to="/createbook" 
+                to="/createbook"
                 className="inline-block px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
               >
                 Add First Book
@@ -108,14 +124,21 @@ export default function BookList() {
             </div>
           )}
 
-          {isLoaded && !error && books.length > 0 && (
+          {isLoaded && !error && displayedBooks.length === 0 && activeSearchTerm && (
+             <div className="max-w-xl mx-auto text-slate-300 px-6 py-8 rounded-lg text-center">
+              <h2 className="text-2xl font-semibold text-sky-400 mb-3">No Matches Found</h2>
+              <p>No books found matching "{activeSearchTerm}". Try a different search.</p>
+            </div>
+          )}
+
+          {isLoaded && !error && displayedBooks.length > 0 && (
             <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5">
-              {books.map((book) => (
+              {displayedBooks.map((book) => (
                 <BookLinkPlaceholder
                   key={book._id}
-                  _id={book._id} 
+                  _id={book._id}
                   title={book.title}
-                  author={book.author} 
+                  author={book.author} // Pass the original author object/string
                   publishedYear={book.publishedYear}
                 />
               ))}
@@ -124,7 +147,7 @@ export default function BookList() {
 
           <div className="text-center mt-12">
             <Link
-              to="/" 
+              to="/"
               className="inline-block px-8 py-3 bg-slate-700 hover:bg-slate-600/90 text-slate-100 font-semibold rounded-lg shadow-md transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-slate-500"
             >
               ← Back to Main

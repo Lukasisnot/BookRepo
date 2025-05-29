@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Added useCallback
 import api from "../../../api";
+import SearchBar from "../../../components/SearchBar"; // Adjust path if necessary
 
+// PeriodCard and LoadingSpinner remain the same
 const PeriodCard = ({ _id, name, startYear, endYear, description }) => (
   <Link
     to={`/period/${_id}`}
@@ -34,40 +36,52 @@ const LoadingSpinner = () => (
 );
 
 export default function PeriodList() {
-  const [periods, setPeriods] = useState([]);
+  const [periods, setPeriods] = useState([]); // Original full list of periods
+  const [displayedPeriods, setDisplayedPeriods] = useState([]); // Periods to display (can be filtered)
+  const [activeSearchTerm, setActiveSearchTerm] = useState(""); // To show what was searched for
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null);
 
-  const load = async () => {
-    setLoaded(false);
-    setError(null);
-    try {
-      const response = await api.get("/period");
-      if (response.status === 200) {
-        setPeriods(response.data.payload);
-      } else {
-        setError("Could not retrieve periods.");
-      }
-    } catch (err) {
-      console.error("Error fetching periods:", err);
-      if (err.response?.status === 404) {
-        setError("No periods found.");
-      } else {
-        setError("Unexpected server error.");
-      }
-    } finally {
-      setLoaded(true);
-    }
-  };
-
+  // Load all periods initially
   useEffect(() => {
-    load();
+    const loadInitialPeriods = async () => {
+      setLoaded(false);
+      setError(null);
+      try {
+        const response = await api.get("/period");
+        if (response.status === 200 && response.data.payload) {
+          setPeriods(response.data.payload);
+          // displayedPeriods will be set by SearchBar's onSearchResults
+        } else {
+          setPeriods([]);
+          setError("Could not retrieve periods.");
+        }
+      } catch (err) {
+        console.error("Error fetching periods:", err);
+        setPeriods([]);
+        if (err.response?.status === 404) {
+          setError("No periods found in the collection.");
+        } else {
+          setError("Unexpected server error.");
+        }
+      } finally {
+        setLoaded(true);
+      }
+    };
+
+    loadInitialPeriods();
   }, []);
+
+  // Callback for SearchBar
+  const handleSearchResults = useCallback((results, term) => {
+    setDisplayedPeriods(results);
+    setActiveSearchTerm(term);
+  }, []); // Dependencies are stable setters
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 pb-12 antialiased">
       <div className="pt-20 sm:pt-24">
-        <header className="text-center mb-10 sm:mb-12">
+        <header className="text-center mb-6 sm:mb-8"> {/* Reduced bottom margin */}
           <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-sky-500">
             Historical Periods
           </h1>
@@ -76,6 +90,19 @@ export default function PeriodList() {
           </p>
         </header>
 
+        {/* Search Bar Integration */}
+        {isLoaded && !error && (
+          <div className="mb-8 sm:mb-10">
+            <SearchBar
+              dataSource={periods}
+              searchKeys={['name', 'years', 'characteristics']} // Keys to search (handles strings & numbers)
+              onSearchResults={handleSearchResults}
+              placeholder="Search periods by name, characteristics or year..."
+              ariaLabel="Search historical periods"
+            />
+          </div>
+        )}
+
         {!isLoaded && (
           <div className="text-center py-10">
             <LoadingSpinner />
@@ -83,32 +110,49 @@ export default function PeriodList() {
           </div>
         )}
 
-        {isLoaded && error && (
+        {isLoaded && error && periods.length === 0 && ( // Show error if loading finished with error AND no periods
           <div className="max-w-xl mx-auto bg-red-900/50 border border-red-700 text-red-300 px-6 py-4 rounded-lg text-center">
             <p className="font-semibold">Oops! Something went wrong.</p>
             <p className="text-sm">{error}</p>
           </div>
         )}
 
-        {isLoaded && !error && periods.length === 0 && (
+        {/* Condition for no periods found */}
+        {isLoaded && !error && displayedPeriods.length === 0 && (
           <div className="max-w-xl mx-auto bg-slate-800/70 text-slate-300 px-6 py-8 rounded-lg text-center shadow-xl">
-            <h2 className="text-2xl font-semibold text-sky-400 mb-3">No Periods Found</h2>
-            <p className="mb-6">There are no periods in the collection yet.</p>
-            <Link
-              to="/createperiod"
-              className="inline-block px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
-            >
-              Add First Period
-            </Link>
+            <h2 className="text-2xl font-semibold text-sky-400 mb-3">
+              {activeSearchTerm ? `No Periods Found Matching "${activeSearchTerm}"` : "No Periods Found"}
+            </h2>
+            <p className="mb-6">
+              {activeSearchTerm
+                ? "Try a different search term or clear the search."
+                : "There are no periods in the collection yet."}
+            </p>
+            {!activeSearchTerm && ( // Only show "Add" link if not in a search context
+                 <Link
+                    to="/createperiod" // Adjust if your route is different
+                    className="inline-block px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                    Add First Period
+                </Link>
+            )}
           </div>
         )}
 
-        {isLoaded && !error && periods.length > 0 && (
+        {/* Display periods if available */}
+        {isLoaded && !error && displayedPeriods.length > 0 && (
           <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5">
-            {periods.map((period) => (
+            {displayedPeriods.map((period) => (
               <PeriodCard key={period._id} {...period} />
             ))}
           </div>
+        )}
+
+        {/* Show non-critical error even if some data is displayed */}
+        {isLoaded && error && periods.length > 0 && displayedPeriods.length > 0 && (
+             <p className="text-center text-red-400 mt-6">
+                {error} (Displaying available data)
+             </p>
         )}
 
         <div className="text-center mt-12">

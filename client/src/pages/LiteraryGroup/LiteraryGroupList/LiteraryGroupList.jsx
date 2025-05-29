@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Added useCallback
 import api from "../../../api";
+import SearchBar from "../../../components/SearchBar"; // Adjust path if necessary
 
+// LiteraryGroupCard and LoadingSpinner remain the same
 const LiteraryGroupCard = ({ _id, name, years, characteristics }) => (
   <Link
     to={`/literary-group/${_id}`}
@@ -30,42 +32,54 @@ const LoadingSpinner = () => (
 );
 
 export default function LiteraryGroupList() {
-  const [groups, setGroups] = useState([]);
+  const [groups, setGroups] = useState([]); // Original full list of groups
+  const [displayedGroups, setDisplayedGroups] = useState([]); // Groups to display (can be filtered)
+  const [activeSearchTerm, setActiveSearchTerm] = useState(""); // To show what was searched for
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null);
 
-  const load = async () => {
-    setLoaded(false);
-    setError(null);
-    try {
-      const response = await api.get("/literary-group");
-      if (response.status === 200) {
-        setGroups(response.data.payload);
-      } else {
-        setError("Failed to fetch Literary Groups.");
-      }
-    } catch (err) {
-      console.error("Error fetching groups:", err);
-      if (err.response?.status === 404) {
-        setError("No Literary Groups found.");
-      } else if (err.response?.status === 500) {
-        setError("Server error. Try again later.");
-      } else {
-        setError("Unexpected error occurred.");
-      }
-    } finally {
-      setLoaded(true);
-    }
-  };
-
+  // Load all groups initially
   useEffect(() => {
-    load();
+    const loadInitialGroups = async () => {
+      setLoaded(false);
+      setError(null);
+      try {
+        const response = await api.get("/literary-group");
+        if (response.status === 200 && response.data.payload) {
+          setGroups(response.data.payload);
+          // displayedGroups will be set by SearchBar's onSearchResults
+        } else {
+          setGroups([]);
+          setError("Failed to fetch Literary Groups.");
+        }
+      } catch (err) {
+        console.error("Error fetching groups:", err);
+        setGroups([]);
+        if (err.response?.status === 404) {
+          setError("No Literary Groups found in the collection.");
+        } else if (err.response?.status === 500) {
+          setError("Server error. Please try again later.");
+        } else {
+          setError("An unexpected error occurred while fetching groups.");
+        }
+      } finally {
+        setLoaded(true);
+      }
+    };
+
+    loadInitialGroups();
   }, []);
+
+  // Callback for SearchBar
+  const handleSearchResults = useCallback((results, term) => {
+    setDisplayedGroups(results);
+    setActiveSearchTerm(term);
+  }, []); // Dependencies are stable setters
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 pb-12 antialiased">
       <div className="pt-20 sm:pt-24">
-        <header className="text-center mb-10 sm:mb-12">
+        <header className="text-center mb-6 sm:mb-8"> {/* Reduced bottom margin for search bar */}
           <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-500 to-sky-500">
             Literary Movements
           </h1>
@@ -74,6 +88,19 @@ export default function LiteraryGroupList() {
           </p>
         </header>
 
+        {/* Search Bar Integration */}
+        {isLoaded && !error && ( // Only show search bar if loaded and no critical error
+          <div className="mb-8 sm:mb-10">
+            <SearchBar
+              dataSource={groups}
+              searchKeys={['name', 'characteristics', 'years']} // Keys to search
+              onSearchResults={handleSearchResults}
+              placeholder="Search movements by name, traits or years..."
+              ariaLabel="Search literary movements"
+            />
+          </div>
+        )}
+
         {!isLoaded && (
           <div className="text-center py-10">
             <LoadingSpinner />
@@ -81,32 +108,49 @@ export default function LiteraryGroupList() {
           </div>
         )}
 
-        {isLoaded && error && (
+        {isLoaded && error && groups.length === 0 && ( // Show error if loading finished with error AND no groups
           <div className="max-w-xl mx-auto bg-red-900/50 border border-red-700 text-red-300 px-6 py-4 rounded-lg text-center">
             <p className="font-semibold">Oops! Something went wrong.</p>
             <p className="text-sm">{error}</p>
           </div>
         )}
 
-        {isLoaded && !error && groups.length === 0 && (
+        {/* Condition for no groups found */}
+        {isLoaded && !error && displayedGroups.length === 0 && (
           <div className="max-w-xl mx-auto bg-slate-800/70 text-slate-300 px-6 py-8 rounded-lg text-center shadow-xl">
-            <h2 className="text-2xl font-semibold text-sky-400 mb-3">Nothing Yet</h2>
-            <p className="mb-6">No literary groups available right now.</p>
-            <Link
-              to="/createliterary-group"
-              className="inline-block px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
-            >
-              Add Literary Group
-            </Link>
+            <h2 className="text-2xl font-semibold text-sky-400 mb-3">
+              {activeSearchTerm ? `No Movements Found Matching "${activeSearchTerm}"` : "No Literary Movements Yet"}
+            </h2>
+            <p className="mb-6">
+              {activeSearchTerm
+                ? "Try a different search term or clear the search."
+                : "No literary groups available in the collection right now."}
+            </p>
+            {!activeSearchTerm && ( // Only show "Add" link if not in a search context
+                 <Link
+                    to="/createliterary-group" // Adjust if your route is different
+                    className="inline-block px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                    Add Literary Group
+                </Link>
+            )}
           </div>
         )}
 
-        {isLoaded && !error && groups.length > 0 && (
+        {/* Display groups if available */}
+        {isLoaded && !error && displayedGroups.length > 0 && (
           <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5">
-            {groups.map((group) => (
+            {displayedGroups.map((group) => (
               <LiteraryGroupCard key={group._id} {...group} />
             ))}
           </div>
+        )}
+
+        {/* Show non-critical error even if some data is displayed */}
+        {isLoaded && error && groups.length > 0 && displayedGroups.length > 0 && (
+             <p className="text-center text-red-400 mt-6">
+                {error} (Displaying available data)
+             </p>
         )}
 
         <div className="text-center mt-12">
