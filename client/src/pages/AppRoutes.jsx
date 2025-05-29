@@ -145,7 +145,7 @@ function AppRoutesLogic() {
           <NavbarLink as={Link} to="/period" className="text-indigo-500">Periods</NavbarLink>
           <NavbarLink as={Link} to="/literary-group" className="text-indigo-500">Literary Groups</NavbarLink>
           <NavbarLink as={Link} to="/author" className="text-indigo-500">Authors</NavbarLink>
-          <NavbarLink as={Link} to="/book" className="text-indigo-500">Books</NavbarLink>
+          
           
           {authLoading ? (
             <NavbarLink><Spinner size="sm" /></NavbarLink>

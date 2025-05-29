@@ -409,15 +409,7 @@ function AutoCenterSelectedBookPage() {
         />
       </div>
 
-      {selectedBookId && (
-        <button
-          onClick={deselectBook}
-          aria-label="Close selected book view"
-          className="fixed top-4 right-4 md:top-6 md:right-6 z-[101] bg-slate-700/80 hover:bg-slate-600/90 text-white font-semibold py-2 px-3 rounded-lg shadow-md transition-colors backdrop-blur-sm text-sm"
-        >
-          Close
-        </button>
-      )}
+      
 
       <main className="flex-grow flex flex-col items-center justify-center w-full px-2 sm:px-4">
         {/* Display error here as well if it persists but some books might be loaded */}
