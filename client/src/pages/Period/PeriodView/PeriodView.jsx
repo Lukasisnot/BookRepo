@@ -1,126 +1,132 @@
+// src/pages/Period/PeriodView/PeriodView.jsx
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import api from "../../../api";
+import api from "../../../api"; // Your API instance
 
-// Reusable loading spinner component
+// --- Helper Components ---
 const LoadingSpinner = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center">
-    <svg
-      className="animate-spin h-12 w-12 text-sky-400"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      ></circle>
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      ></path>
+    <svg className="animate-spin h-12 w-12 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
-    <p className="mt-4 text-slate-300 text-lg">Loading period...</p>
+    <p className="mt-4 text-slate-300 text-lg">Loading Period...</p>
   </div>
 );
 
-// Reusable error or info display component
-const InfoMessageDisplay = ({ title, message, isError = true }) => (
+const InfoMessageDisplay = ({ title, message, isError = true, backLink = "/period", backLinkText = "Back to Periods" }) => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-    <div
-      className={`max-w-md p-8 rounded-lg shadow-xl ${
-        isError ? "bg-red-900/50 border border-red-700" : "bg-slate-800/70"
-      }`}
-    >
-      <h2
-        className={`text-2xl font-semibold mb-3 ${
-          isError ? "text-red-300" : "text-sky-400"
-        }`}
-      >
-        {title}
-      </h2>
-      <p className={`${isError ? "text-red-400" : "text-slate-300"}`}>
-        {message}
-      </p>
-      <Link
-        to="/"
-        className="mt-6 inline-block px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-md transition-all"
-      >
-        Go to Library
+    <div className={`max-w-md p-8 rounded-lg shadow-xl ${isError ? "bg-red-900/50 border border-red-700" : "bg-slate-800/70"}`}>
+      <h2 className={`text-2xl font-semibold mb-3 ${isError ? "text-red-300" : "text-sky-400"}`}>{title}</h2>
+      <p className={`${isError ? "text-red-400" : "text-slate-300"}`}>{message}</p>
+      <Link to={backLink} className="mt-6 inline-block px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-md transition-all">
+        {backLinkText}
       </Link>
     </div>
   </div>
 );
 
-// Simple reusable display component
-const DetailItem = ({ label, value }) => {
-  if (!value && value !== 0) return null;
+const DetailItem = ({ label, value, isHtml = false, valueClassName = "text-slate-200" }) => {
+  if (!value && value !== 0 && typeof value !== 'string') return null;
   return (
     <div className="py-2">
-      <span className="text-sm font-semibold text-slate-400 block mb-0.5">
-        {label}
-      </span>
-      <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">
-        {value || "-"}
-      </p>
+      <span className="text-sm font-semibold text-slate-400 block mb-0.5">{label}</span>
+      {isHtml ? (
+        <div className={`${valueClassName} prose prose-sm prose-invert max-w-none whitespace-pre-wrap leading-relaxed`} dangerouslySetInnerHTML={{ __html: value }} />
+      ) : (
+        <p className={`${valueClassName} whitespace-pre-wrap leading-relaxed`}>{value === null || value === undefined ? "-" : value}</p>
+      )}
     </div>
   );
 };
+// --- End of Helper Components ---
 
-export default function PeriodView() {
+export default function PeriodView({ user }) { // Accept user prop
+  console.log("[PeriodView] Component rendered. Received user prop:", user);
+
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [period, setPeriod] = useState(null);
-  const [status, setStatus] = useState("loading"); // loading | loaded | notfound | error
+  const [status, setStatus] = useState("loading");
+  const [errorMessage, setErrorMessage] = useState(""); // For more specific error messages
+  
   const [deleteInput, setDeleteInput] = useState("");
   const [deleteInfo, setDeleteInfo] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
+    console.log("[PeriodView] useEffect for loadPeriod triggered. ID:", id);
+    const loadPeriod = async () => { // Renamed load to loadPeriod
+      setStatus("loading");
+      setErrorMessage("");
       try {
+        console.log(`[PeriodView] Attempting to fetch /period/${id}`);
         const response = await api.get(`/period/${id}`);
-        if (response.status === 200) {
+        console.log(`[PeriodView] /period/${id} response status:`, response.status);
+        if (response.status === 200 && response.data.payload) {
           setPeriod(response.data.payload);
           setStatus("loaded");
+          console.log("[PeriodView] Period data loaded:", response.data.payload);
         } else {
+          setPeriod(null);
           setStatus("notfound");
+          setErrorMessage("Period data could not be retrieved as expected.");
+          console.warn("[PeriodView] Period not found or bad response structure.");
         }
-      } catch {
-        setStatus("error");
+      } catch (error) {
+        console.error("[PeriodView] Failed to fetch period:", error.response || error.message);
+        setPeriod(null);
+        if (error.response && error.response.status === 401) {
+            console.error("[PeriodView] UNAUTHORIZED (401) fetching period. Check session/token.");
+            setStatus("error");
+            setErrorMessage("Unauthorized. You may need to log in again to view this content.");
+        } else if (error.response && error.response.status === 404) {
+          setStatus("notfound");
+          setErrorMessage("The requested period does not exist in our records.");
+        } else {
+          setStatus("error");
+          setErrorMessage("Failed to fetch period details. Please try again later.");
+        }
       }
     };
-    if (id) load();
+    if (id) {
+      loadPeriod();
+    }
   }, [id]);
 
   const handleDelete = async (e) => {
     e.preventDefault();
-    if (isDeleting) return;
+    if (isDeleting || !period) return;
 
     if (deleteInput === period.name) {
       setIsDeleting(true);
+      setDeleteInfo("");
       try {
+        console.log(`[PeriodView] Attempting to delete /period/${id}`);
         const response = await api.delete(`/period/${id}`);
+        console.log(`[PeriodView] Delete /period/${id} response status:`, response.status);
         if (response.status === 200 || response.status === 204) {
-          navigate("/");
+          navigate("/period"); // Navigate to periods list
         } else {
-          setDeleteInfo(response.data?.msg || "Failed to delete the period.");
+          setDeleteInfo(response.data?.msg || "Failed to delete the period. Please try again.");
         }
-      } catch {
-        setDeleteInfo("An error occurred while deleting.");
+      } catch (err) {
+        console.error("[PeriodView] Error deleting period:", err.response || err.message);
+        setDeleteInfo(err.response?.data?.msg || "An error occurred while deleting the period.");
       } finally {
         setIsDeleting(false);
       }
     } else {
-      setDeleteInfo("Incorrect name. Please type the period name exactly.");
+      setDeleteInfo("Incorrect name. Please type the period name exactly as shown to confirm deletion.");
     }
   };
+ 
+  const isAdmin = user && user.role === 'admin';
+  console.log("[PeriodView] isAdmin value:", isAdmin);
+  if(user) {
+    console.log("[PeriodView] user.role from prop:", user.role);
+  }
 
   if (status === "loading") {
     return (
@@ -129,17 +135,22 @@ export default function PeriodView() {
       </div>
     );
   }
-
-  if (status === "notfound" || status === "error") {
+  if (status === "error") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4">
+        <InfoMessageDisplay title="Error" message={errorMessage} isError={true} backLink="/period" backLinkText="Back to Periods"/>
+      </div>
+    );
+  }
+  if (status === "notfound" || !period) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4">
         <InfoMessageDisplay
-          title={status === "notfound" ? "Period Not Found" : "Error"}
-          message={
-            status === "notfound"
-              ? "The requested period could not be found."
-              : "Failed to load the period. Please try again later."
-          }
+          title="Period Not Found"
+          message={errorMessage || "The requested period could not be found."}
+          isError={false} // Not an error, just not found
+          backLink="/period"
+          backLinkText="Back to Periods"
         />
       </div>
     );
@@ -160,52 +171,58 @@ export default function PeriodView() {
               Period Information
             </h2>
             <DetailItem label="Name" value={period.name} />
-            <DetailItem label="Years" value={period.years || "-"} />
-            <DetailItem label="Characteristics" value={period.characteristics || "-"} />
+            <DetailItem label="Years Active" value={period.years || "-"} />
+            <DetailItem label="Key Characteristics" value={period.characteristics || "-"} />
+            <DetailItem label="Period ID" value={period._id} valueClassName="text-xs text-slate-500 font-mono" />
           </section>
 
-          <section className="pt-6 border-t border-slate-700">
-            <h2 className="text-xl font-semibold text-red-400 mb-3">Delete This Period</h2>
-            <p className="text-sm text-slate-400 mb-4">
-              To permanently delete this period, type its full name:{" "}
-              <strong className="text-slate-200">{period.name}</strong>
-            </p>
-            <form onSubmit={handleDelete} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Type full period name to confirm deletion"
-                value={deleteInput}
-                onChange={(e) => setDeleteInput(e.target.value)}
-                required
-                className="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-700 text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-slate-500"
-              />
-              <button
-                type="submit"
-                disabled={isDeleting}
-                className={`w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg shadow-md transition-all ${
-                  isDeleting
-                    ? "bg-slate-600 text-slate-400 cursor-not-allowed"
-                    : "bg-red-600 hover:bg-red-700 text-white"
-                }`}
-              >
-                {isDeleting ? "Deleting..." : "Delete Period Permanently"}
-              </button>
-              {deleteInfo && <p className="text-sm font-medium text-red-400 pt-2">{deleteInfo}</p>}
-            </form>
-          </section>
+          {/* Admin Controls: Update Button and Delete Section */}
+          {isAdmin && (
+            <section className="pt-6 border-t border-slate-700">
+              <h2 className="text-xl font-semibold text-red-400 mb-3">Delete This Period</h2>
+              <p className="text-sm text-slate-400 mb-4">
+                To permanently delete this period, type its full name:{" "}
+                <strong className="text-slate-200">{period.name}</strong> in the box below and click delete.
+              </p>
+              <form onSubmit={handleDelete} className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Type full period name to confirm deletion"
+                  value={deleteInput}
+                  onChange={(e) => setDeleteInput(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-700 text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 placeholder-slate-500 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={isDeleting}
+                  className={`w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg shadow-md transition-all ${
+                    isDeleting
+                      ? "bg-slate-600 text-slate-400 cursor-not-allowed"
+                      : "bg-red-600 hover:bg-red-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-red-500"
+                  }`}
+                >
+                  {isDeleting ? "Deleting..." : "Delete Period Permanently"}
+                </button>
+                {deleteInfo && <p className="text-sm font-medium text-red-400 pt-2">{deleteInfo}</p>}
+              </form>
+            </section>
+          )}
 
           <section className="pt-6 border-t border-slate-700 flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-3 sm:space-y-0">
+            {isAdmin && ( // Update button also admin-only
+              <Link
+                to={`/updateperiod/${id}`} // Ensure this route exists and is protected
+                className="w-full sm:w-auto text-center px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
+              >
+                Update Period
+              </Link>
+            )}
             <Link
-              to={`/updateperiod/${id}`}
-              className="w-full sm:w-auto text-center px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
-            >
-              Update Period
-            </Link>
-            <Link
-              to="/"
+              to="/period" // Link to the periods list
               className="w-full sm:w-auto text-center px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-slate-100 font-semibold rounded-lg shadow-md transition-colors"
             >
-              Back to Library
+              Back to Periods
             </Link>
           </section>
         </div>

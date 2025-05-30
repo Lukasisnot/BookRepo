@@ -1,8 +1,8 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import api from "../../../api";
+import api from "../../../api"; // Make sure this path is correct for your project structure
 
-
+// ... (LoadingSpinner, InfoMessageDisplay, DetailItem components remain the same)
 const LoadingSpinner = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center">
     <svg className="animate-spin h-12 w-12 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -44,8 +44,8 @@ const DetailItem = ({ label, value, isHtml = false, className = "", valueClassNa
   );
 };
 
-
-export default function BookView() {
+// MODIFIED: Add 'user' to the props
+export default function BookView({ user }) { 
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -117,36 +117,27 @@ export default function BookView() {
  
   if (loadingState === 'loading') {
     return (
-      <>
-        
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
-          <LoadingSpinner />
-        </div>
-      </>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
+        <LoadingSpinner />
+      </div>
     );
   }
   if (loadingState === 'notfound' || loadingState === 'error') {
     return (
-      <>
-        
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
-          <InfoMessageDisplay 
-            title={loadingState === 'notfound' ? "Book Not Found" : "Error"}
-            message={errorMessage}
-            isError={loadingState === 'error'}
-          />
-        </div>
-      </>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
+        <InfoMessageDisplay 
+          title={loadingState === 'notfound' ? "Book Not Found" : "Error"}
+          message={errorMessage}
+          isError={loadingState === 'error'}
+        />
+      </div>
     );
   }
   if (!book) { 
      return (
-      <>
-       
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
-          <InfoMessageDisplay title="Information Unavailable" message="Book details cannot be displayed at this time." />
-        </div>
-      </>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
+        <InfoMessageDisplay title="Information Unavailable" message="Book details cannot be displayed at this time." />
+      </div>
     );
   }
 
@@ -154,82 +145,83 @@ export default function BookView() {
   const group = author?.literary_group;
   const period = author?.period;
 
+  // Check if the user is an admin
+  const isAdmin = user && user.role === 'admin';
+
   return (
-    <>
-     
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 pb-12 antialiased">
-        <div className="pt-20 sm:pt-24"> {}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 pb-12 antialiased">
+      <div className="pt-20 sm:pt-24">
+        
+        <header className="text-center mb-10 sm:mb-12 max-w-3xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 break-words">
+            {book.title}
+          </h1>
+          {author?.name && (
+            <p className="mt-2 text-lg text-slate-400">by {author.name}</p>
+          )}
+        </header>
+
+        <div className="max-w-3xl mx-auto bg-slate-800/70 backdrop-blur-md rounded-xl shadow-2xl p-6 sm:p-8 space-y-6">
           
-          <header className="text-center mb-10 sm:mb-12 max-w-3xl mx-auto">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 break-words">
-              {book.title}
-            </h1>
-            {author?.name && (
-              <p className="mt-2 text-lg text-slate-400">by {author.name}</p>
-            )}
-          </header>
+          <section>
+            <h2 className="text-2xl font-semibold text-sky-300 mb-4 border-b border-slate-700 pb-2">Book Information</h2>
+            <DetailItem label="Synopsis / Description" value={book.description || "No description provided."} />
+            <DetailItem label="Published Year" value={book.publishedYear} />
+            <DetailItem label="Book ID" value={book._id} valueClassName="text-xs text-slate-500 font-mono" />
+          </section>
 
-          <div className="max-w-3xl mx-auto bg-slate-800/70 backdrop-blur-md rounded-xl shadow-2xl p-6 sm:p-8 space-y-6">
-            
-            {}
+          {author && (
             <section>
-              <h2 className="text-2xl font-semibold text-sky-300 mb-4 border-b border-slate-700 pb-2">Book Information</h2>
-              <DetailItem label="Synopsis / Description" value={book.description || "No description provided."} />
-              <DetailItem label="Published Year" value={book.publishedYear} />
-              <DetailItem label="Book ID" value={book._id} valueClassName="text-xs text-slate-500 font-mono" />
+              <h2 className="text-2xl font-semibold text-sky-300 mb-4 border-b border-slate-700 pb-2">Author Details</h2>
+              <DetailItem label="Name" value={author.name} />
+              <DetailItem label="Nationality" value={author.nationality} />
+              <DetailItem label="Biography" value={author.bio || "No biography available."} />
+
+              {group && (
+                <div className="mt-4 pl-4 border-l-2 border-slate-700">
+                  <h3 className="text-lg font-semibold text-sky-400 mb-2">Literary Group</h3>
+                  <DetailItem label="Name" value={group.name} />
+                  <DetailItem label="Years Active" value={group.years} />
+                  <DetailItem label="Key Characteristics" value={group.characteristics} />
+                </div>
+              )}
+
+              {period && (
+                <div className="mt-4 pl-4 border-l-2 border-slate-700">
+                  <h3 className="text-lg font-semibold text-sky-400 mb-2">Literary Period</h3>
+                  <DetailItem label="Name" value={period.name} />
+                  <DetailItem label="Years Active" value={period.years} />
+                  {/* Corrected typo: Lvalue to value */}
+                  <DetailItem label="Key Characteristics" value={period.characteristics} /> 
+                </div>
+              )}
             </section>
+          )}
+          {!author && (
+              <p className="text-slate-400 italic">No author information linked to this book.</p>
+          )}
 
-            {}
-            {author && (
-              <section>
-                <h2 className="text-2xl font-semibold text-sky-300 mb-4 border-b border-slate-700 pb-2">Author Details</h2>
-                <DetailItem label="Name" value={author.name} />
-                <DetailItem label="Nationality" value={author.nationality} />
-                <DetailItem label="Biography" value={author.bio || "No biography available."} />
-
-                {}
-                {group && (
-                  <div className="mt-4 pl-4 border-l-2 border-slate-700">
-                    <h3 className="text-lg font-semibold text-sky-400 mb-2">Literary Group</h3>
-                    <DetailItem label="Name" value={group.name} />
-                    <DetailItem label="Years Active" value={group.years} />
-                    <DetailItem label="Key Characteristics" value={group.characteristics} />
-                  </div>
-                )}
-
-                {}
-                {period && (
-                  <div className="mt-4 pl-4 border-l-2 border-slate-700">
-                    <h3 className="text-lg font-semibold text-sky-400 mb-2">Literary Period</h3>
-                    <DetailItem label="Name" value={period.name} />
-                    <DetailItem label="Years Active" value={period.years} />
-                    <DetailItem label="Key Characteristics" Lvalue={period.characteristics} />
-                  </div>
-                )}
-              </section>
-            )}
-            {!author && (
-                <p className="text-slate-400 italic">No author information linked to this book.</p>
-            )}
-
-
-            {}
-            <section className="pt-6 border-t border-slate-700 flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-3 sm:space-y-0">
+          {/* Action Buttons Section */}
+          <section className="pt-6 border-t border-slate-700 flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-3 sm:space-y-0">
+            {/* MODIFIED: Conditionally render Update Button */}
+            {isAdmin && (
               <Link
                 to={`/updatebook/${id}`}
                 className="w-full sm:w-auto text-center px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
               >
                 Update Book
               </Link>
-              <Link
-                to="/" 
-                className="w-full sm:w-auto text-center px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-slate-100 font-semibold rounded-lg shadow-md transition-colors"
-              >
-                Back to Library
-              </Link>
-            </section>
+            )}
+            <Link
+              to="/" 
+              className="w-full sm:w-auto text-center px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-slate-100 font-semibold rounded-lg shadow-md transition-colors"
+            >
+              Back to Library
+            </Link>
+          </section>
 
-            {}
+          {/* MODIFIED: Conditionally render Delete Section */}
+          {isAdmin && (
             <section className="pt-6 border-t border-slate-700">
               <h2 className="text-xl font-semibold text-red-400 mb-3">Delete This Book</h2>
               <p className="text-sm text-slate-400 mb-4">
@@ -258,11 +250,9 @@ export default function BookView() {
                 {deleteInfo && <p className="text-sm font-medium text-red-400 pt-2">{deleteInfo}</p>}
               </form>
             </section>
-
-          </div>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
-
