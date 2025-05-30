@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import api from "../../api";
+import SearchBar from "../../components/SearchBar";
 
 // Color palettes for the books
 const colorPalettes = [
@@ -75,9 +76,7 @@ const colorPalettes = [
   },
 ];
 
-// ... (Book component remains the same) ...
 const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
-  // ... existing Book component code ...
   const bookBaseHeightMobile = 260;
   const bookBaseHeightDesktop = 300;
 
@@ -211,11 +210,14 @@ const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
 
 // Main Page Component
 function AutoCenterSelectedBookPage() {
-  const [books, setBooks] = useState([]);
+  const [rawBooks, setRawBooks] = useState([]); // Renamed to avoid confusion
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null);
-  const [booksData, setBooksData] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
+  const [booksData, setBooksData] = useState([]); // This will hold the processed book data
+
+  // New states for handling filtered data
+  const [displayedBooks, setDisplayedBooks] = useState([]);
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -224,9 +226,9 @@ function AutoCenterSelectedBookPage() {
       try {
         const response = await api.get("/book");
         if (response.status === 200 && response.data.payload) {
-          setBooks(response.data.payload);
+          setRawBooks(response.data.payload);
         } else {
-          setBooks([]);
+          setRawBooks([]);
           setError("Could not retrieve books at this time.");
         }
       } catch (err) {
@@ -244,7 +246,7 @@ function AutoCenterSelectedBookPage() {
         } else {
           setError("An unexpected error occurred while fetching books.");
         }
-        setBooks([]);
+        setRawBooks([]);
       } finally {
         setLoaded(true);
       }
@@ -254,38 +256,37 @@ function AutoCenterSelectedBookPage() {
   }, []);
 
   useEffect(() => {
-    const loadBooksData = () => {
-      if (!isLoaded || books.length === 0) {
-        if (isLoaded && books.length === 0 && !error) {
-          setBooksData([]);
-        }
-        return;
+    if (!isLoaded || rawBooks.length === 0) {
+      if (isLoaded && rawBooks.length === 0 && !error) {
+        setBooksData([]);
+        setDisplayedBooks([]); // Clear displayed books too
       }
+      return;
+    }
 
-      const getBookData = (book) => {
-        const randomIndex = Math.floor(Math.random() * colorPalettes.length);
-        const selectedPalette = colorPalettes[randomIndex];
+    const getBookData = (book) => {
+      const randomIndex = Math.floor(Math.random() * colorPalettes.length);
+      const selectedPalette = colorPalettes[randomIndex];
 
-        return {
-          id: book._id,
-          title: book.title,
-          author: book.author.name,
-          color: selectedPalette.color,
-          borderColor: selectedPalette.borderColor,
-          textColor: selectedPalette.textColor,
-          spineColor: selectedPalette.spineColor,
-          tag: book.publishedYear,
-          tagColor: selectedPalette.tagColor,
-          slug: `#book-${book._id}`,
-        };
+      return {
+        id: book._id,
+        title: book.title,
+        author: book.author.name,
+        color: selectedPalette.color,
+        borderColor: selectedPalette.borderColor,
+        textColor: selectedPalette.textColor,
+        spineColor: selectedPalette.spineColor,
+        tag: book.publishedYear,
+        tagColor: selectedPalette.tagColor,
+        slug: `#book-${book._id}`,
       };
-
-      const newBooksData = books.map(getBookData);
-      setBooksData(newBooksData);
     };
 
-    loadBooksData();
-  }, [books, isLoaded, error]);
+    const newBooksData = rawBooks.map(getBookData);
+    setBooksData(newBooksData);
+    // Initialize displayedBooks with all booksData if no search term is active
+    // This will be handled by SearchBar's initial call to onSearchResults
+  }, [rawBooks, isLoaded, error]);
 
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [isDesktop, setIsDesktop] = useState(true);
@@ -321,7 +322,7 @@ function AutoCenterSelectedBookPage() {
   }, []);
 
   const selectedBookDetails = useMemo(
-    () => booksData.find((b) => b.id === selectedBookId),
+    () => booksData.find((b) => b.id === selectedBookId), // Search in original booksData for details
     [booksData, selectedBookId]
   );
 
@@ -330,7 +331,7 @@ function AutoCenterSelectedBookPage() {
       if (
         selectedBookId !== null &&
         !event.target.closest(
-          '[role="button"], [aria-label^="Close"], [aria-label^="Read more"], input[type="text"]'
+          '[role="button"], [aria-label^="Close"], [aria-label^="Read more"], input[type="text"]' // Ensure clicking search bar doesn't deselect
         )
       ) {
         deselectBook();
@@ -340,21 +341,12 @@ function AutoCenterSelectedBookPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [selectedBookId, deselectBook]);
 
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-    setSelectedBookId(null); // Deselect book when search term changes
-  };
-
-  const filteredBooksData = useMemo(() => {
-    if (!searchTerm) {
-      return booksData;
-    }
-    return booksData.filter(
-      (book) =>
-        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [booksData, searchTerm]);
+  // Callback for SearchBar
+  const handleSearchResults = useCallback((results, term) => {
+    setDisplayedBooks(results);
+    setActiveSearchTerm(term);
+    deselectBook();
+  }, []);
 
   const desktopBookPopUpHeight = 48;
   const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20;
@@ -367,7 +359,6 @@ function AutoCenterSelectedBookPage() {
     );
   }
   if (error && booksData.length === 0) {
-    // Show error only if no books data to fallback to
     return (
       <div className="min-h-screen flex items-center justify-center text-red-400 text-center px-4">
         {error}
@@ -396,37 +387,31 @@ function AutoCenterSelectedBookPage() {
         </p>
       </header>
 
-      {/* Search Bar */}
-      <div className="w-2/5 mx-auto mb-6 sm:mb-8">
-        <input
-          type="text"
-          placeholder="Search books by title or author..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          className="w-full py-3 text-sm border-0 border-b border-slate-600 focus:border-indigo-500 focus:ring-0
-           bg-transparent text-slate-100 placeholder-slate-400 outline-none transition-colors"
-          aria-label="Search books"
-        />
-      </div>
+      <SearchBar
+        dataSource={booksData}
+        searchKeys={['title', 'author', 'tag']}
+        onSearchResults={handleSearchResults}
+        placeholder="Search books by title or author..."
+        ariaLabel="Search books"
+      />
 
       
 
       <main className="flex-grow flex flex-col items-center justify-center w-full px-2 sm:px-4">
-        {/* Display error here as well if it persists but some books might be loaded */}
-        {error && booksData.length > 0 && (
+        {error && booksData.length > 0 && ( // Show error even if some (possibly cached) books are displayed
           <p className="text-red-400 mb-4 text-center">
-            {error} (Showing cached/previous data if available)
+            {error} (Showing available data)
           </p>
         )}
 
-        {filteredBooksData.length === 0 && isLoaded && !error && (
+        {displayedBooks.length === 0 && isLoaded && !error && (
           <p className="text-slate-400 py-10">
-            {searchTerm
-              ? `No books found matching "${searchTerm}".`
+            {activeSearchTerm
+              ? `No books found matching "${activeSearchTerm}".`
               : "No books available in the collection."}
           </p>
         )}
-        {filteredBooksData.length > 0 && (
+        {displayedBooks.length > 0 && (
           <div
             className={`
               relative 
@@ -446,7 +431,7 @@ function AutoCenterSelectedBookPage() {
                 : {}
             }
           >
-            {filteredBooksData.map((book) => {
+            {displayedBooks.map((book) => {
               if (!bookRefs.current[book.id]) {
                 bookRefs.current[book.id] = React.createRef();
               }
