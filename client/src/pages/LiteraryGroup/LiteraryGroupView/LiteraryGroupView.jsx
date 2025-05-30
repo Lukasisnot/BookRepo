@@ -1,5 +1,5 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../../api";
 
 const LoadingSpinner = () => (
@@ -83,11 +83,45 @@ const DetailItem = ({
 };
 
 export default function LiteraryGroupView() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+
+  const fetchUserSession = useCallback(async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const response = await api.get("/user/me");
+      if (response.status === 200 && response.data.payload) {
+        setUser(response.data.payload);
+        localStorage.setItem("isUserLoggedIn", "true");
+      } else {
+        setUser(null);
+        localStorage.removeItem("isUserLoggedIn");
+      }
+    } catch (err) {
+      setUser(null);
+      localStorage.removeItem("isUserLoggedIn");
+      if (err.response && err.response.status !== 401) {
+        setAuthError(err.response?.data?.error || "Failed to fetch user session.");
+      }
+      console.log("No active session or error fetching user:", err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserSession();
+  }, [fetchUserSession]);
+
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const isAdmin = user?.role === "admin";
+
   const [literaryGroup, setLiteraryGroup] = useState(null);
-  const [loadingState, setLoadingState] = useState("loading"); // loading, loaded, notfound, error
+  const [loadingState, setLoadingState] = useState("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteInfo, setDeleteInfo] = useState("");
@@ -149,13 +183,14 @@ export default function LiteraryGroupView() {
     }
   };
 
-  if (loadingState === "loading") {
+  if (loadingState === "loading" || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
         <LoadingSpinner />
       </div>
     );
   }
+
   if (loadingState === "notfound" || loadingState === "error") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
@@ -167,10 +202,14 @@ export default function LiteraryGroupView() {
       </div>
     );
   }
+
   if (!literaryGroup) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
-        <InfoMessageDisplay title="Information Unavailable" message="Literary group details cannot be displayed at this time." />
+        <InfoMessageDisplay
+          title="Information Unavailable"
+          message="Literary group details cannot be displayed at this time."
+        />
       </div>
     );
   }
@@ -194,43 +233,47 @@ export default function LiteraryGroupView() {
             <DetailItem label="Key Characteristics" value={literaryGroup.characteristics || "-"} />
           </section>
 
-          <section className="pt-6 border-t border-slate-700">
-            <h2 className="text-xl font-semibold text-red-400 mb-3">Delete This Literary Group</h2>
-            <p className="text-sm text-slate-400 mb-4">
-              To permanently delete this literary group, please type its full name:{" "}
-              <strong className="text-slate-200">{literaryGroup.name}</strong> in the box below and click delete. This action cannot be undone.
-            </p>
-            <form onSubmit={handleDeleteSubmit} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Type full literary group name to confirm deletion"
-                value={deleteConfirmText}
-                onChange={handleDeleteChange}
-                required
-                className="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-700 text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 placeholder-slate-500 transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={isDeleting}
-                className={`w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg shadow-md transition-all ${
-                  isDeleting
-                    ? "bg-slate-600 text-slate-400 cursor-not-allowed"
-                    : "bg-red-600 hover:bg-red-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-red-500"
-                }`}
-              >
-                {isDeleting ? "Deleting..." : "Delete Literary Group Permanently"}
-              </button>
-              {deleteInfo && <p className="text-sm font-medium text-red-400 pt-2">{deleteInfo}</p>}
-            </form>
-          </section>
+          {isAdmin && (
+            <section className="pt-6 border-t border-slate-700">
+              <h2 className="text-xl font-semibold text-red-400 mb-3">Delete This Literary Group</h2>
+              <p className="text-sm text-slate-400 mb-4">
+                To permanently delete this literary group, please type its full name:{" "}
+                <strong className="text-slate-200">{literaryGroup.name}</strong> in the box below and click delete. This action cannot be undone.
+              </p>
+              <form onSubmit={handleDeleteSubmit} className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Type full literary group name to confirm deletion"
+                  value={deleteConfirmText}
+                  onChange={handleDeleteChange}
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-700 text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 placeholder-slate-500 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={isDeleting}
+                  className={`w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg shadow-md transition-all ${
+                    isDeleting
+                      ? "bg-slate-600 text-slate-400 cursor-not-allowed"
+                      : "bg-red-600 hover:bg-red-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-red-500"
+                  }`}
+                >
+                  {isDeleting ? "Deleting..." : "Delete Literary Group Permanently"}
+                </button>
+                {deleteInfo && <p className="text-sm font-medium text-red-400 pt-2">{deleteInfo}</p>}
+              </form>
+            </section>
+          )}
 
           <section className="pt-6 border-t border-slate-700 flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-3 sm:space-y-0">
-            <Link
-              to={`/updateliterary-group/${id}`}
-              className="w-full sm:w-auto text-center px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
-            >
-              Update Literary Group
-            </Link>
+            {isAdmin && (
+              <Link
+                to={`/updateliterary-group/${id}`}
+                className="w-full sm:w-auto text-center px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
+              >
+                Update Literary Group
+              </Link>
+            )}
             <Link
               to="/"
               className="w-full sm:w-auto text-center px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-slate-100 font-semibold rounded-lg shadow-md transition-colors"

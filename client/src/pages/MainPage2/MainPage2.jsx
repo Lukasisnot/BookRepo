@@ -193,7 +193,7 @@ const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
             </span>
             {isSelected && (
               <a
-                href={book.slug}
+                href={`/book/${book.id}`}
                 onClick={(e) => e.stopPropagation()}
                 className={`inline-block text-[10px] md:text-xs px-2 md:px-2.5 py-1 ${book.tagColor} font-bold rounded shadow-md hover:opacity-80 transition-opacity`}
                 aria-label={`Read more about ${book.title}`}
