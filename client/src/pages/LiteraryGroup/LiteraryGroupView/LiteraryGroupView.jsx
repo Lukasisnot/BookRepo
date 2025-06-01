@@ -1,7 +1,9 @@
+// src/pages/LiteraryGroup/LiteraryGroupView/LiteraryGroupView.jsx
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react"; // useCallback might be removed if fetchUserSession is gone
 import api from "../../../api";
 
+// --- Helper Components (assuming these are defined or imported similarly as in AuthorView if not identical) ---
 const LoadingSpinner = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center">
     <svg
@@ -28,7 +30,7 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const InfoMessageDisplay = ({ title, message, isError = true }) => (
+const InfoMessageDisplay = ({ title, message, isError = true, backLink = "/literary-groups", backLinkText = "Back to Literary Groups" }) => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
     <div
       className={`max-w-md p-8 rounded-lg shadow-xl ${
@@ -46,10 +48,10 @@ const InfoMessageDisplay = ({ title, message, isError = true }) => (
         {message}
       </p>
       <Link
-        to="/"
+        to={backLink} // Use prop for back link
         className="mt-6 inline-block px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-md transition-all"
       >
-        Go to Library
+        {backLinkText} {/* Use prop for back link text */}
       </Link>
     </div>
   </div>
@@ -59,12 +61,11 @@ const DetailItem = ({
   label,
   value,
   isHtml = false,
-  className = "",
-  valueClassName = "text-slate-200",
+  valueClassName = "text-slate-200", // Matched AuthorView's DetailItem signature more closely
 }) => {
-  if (!value && value !== 0) return null;
+  if (!value && value !== 0 && typeof value !== 'string') return null; // Allow empty strings
   return (
-    <div className={`py-2 ${className}`}>
+    <div className="py-2">
       <span className="text-sm font-semibold text-slate-400 block mb-0.5">
         {label}
       </span>
@@ -75,77 +76,70 @@ const DetailItem = ({
         />
       ) : (
         <p className={`${valueClassName} whitespace-pre-wrap leading-relaxed`}>
-          {value || "-"}
+          {value === null || value === undefined ? "-" : value}
         </p>
       )}
     </div>
   );
 };
+// --- End of Helper Components ---
 
-export default function LiteraryGroupView() {
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState(null);
-
-  const fetchUserSession = useCallback(async () => {
-    setAuthLoading(true);
-    setAuthError(null);
-    try {
-      const response = await api.get("/user/me");
-      if (response.status === 200 && response.data.payload) {
-        setUser(response.data.payload);
-        localStorage.setItem("isUserLoggedIn", "true");
-      } else {
-        setUser(null);
-        localStorage.removeItem("isUserLoggedIn");
-      }
-    } catch (err) {
-      setUser(null);
-      localStorage.removeItem("isUserLoggedIn");
-      if (err.response && err.response.status !== 401) {
-        setAuthError(err.response?.data?.error || "Failed to fetch user session.");
-      }
-      console.log("No active session or error fetching user:", err.message);
-    } finally {
-      setAuthLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUserSession();
-  }, [fetchUserSession]);
+export default function LiteraryGroupView({ user }) { // Accept user prop
+  console.log("[LiteraryGroupView] Component rendered. Received user prop:", user);
 
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const isAdmin = user?.role === "admin";
+  // Removed internal user state and fetching logic
+  // const [user, setUser] = useState(null); // Removed
+  // const [authLoading, setAuthLoading] = useState(true); // Removed
+  // const [authError, setAuthError] = useState(null); // Removed
+
+  // useEffect(() => { fetchUserSession(); }, [fetchUserSession]); // Removed fetchUserSession call
 
   const [literaryGroup, setLiteraryGroup] = useState(null);
-  const [loadingState, setLoadingState] = useState("loading");
+  const [loadingState, setLoadingState] = useState("loading"); // Renamed from status for consistency with AuthorView's original state name logic
   const [errorMessage, setErrorMessage] = useState("");
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  
+  const [deleteInput, setDeleteInput] = useState(""); // Renamed from deleteConfirmText
   const [deleteInfo, setDeleteInfo] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const isAdmin = user && user.role === 'admin';
+  console.log("[LiteraryGroupView] isAdmin value:", isAdmin);
+  if(user) {
+    console.log("[LiteraryGroupView] user.role from prop:", user.role);
+  }
+
   useEffect(() => {
+    console.log("[LiteraryGroupView] useEffect for loadLiteraryGroup triggered. ID:", id);
     const loadLiteraryGroup = async () => {
       setLoadingState("loading");
       setErrorMessage("");
       try {
+        console.log(`[LiteraryGroupView] Attempting to fetch /literary-group/${id}`);
         const response = await api.get(`/literary-group/${id}`);
+        console.log(`[LiteraryGroupView] /literary-group/${id} response status:`, response.status);
         if (response.status === 200 && response.data.payload) {
           setLiteraryGroup(response.data.payload);
           setLoadingState("loaded");
+          console.log("[LiteraryGroupView] Literary Group data loaded:", response.data.payload);
         } else {
           setLiteraryGroup(null);
           setLoadingState("notfound");
-          setErrorMessage("Literary group data could not be retrieved.");
+          setErrorMessage("Literary group data could not be retrieved as expected.");
+          console.warn("[LiteraryGroupView] Literary Group not found or bad response structure.");
         }
       } catch (error) {
+        console.error("[LiteraryGroupView] Failed to fetch literary group:", error.response || error.message);
         setLiteraryGroup(null);
-        if (error.response && error.response.status === 404) {
+        if (error.response && error.response.status === 401) {
+            console.error("[LiteraryGroupView] UNAUTHORIZED (401) fetching literary group. Check session/token.");
+            setLoadingState("error");
+            setErrorMessage("Unauthorized. You may need to log in again to view this content.");
+        } else if (error.response && error.response.status === 404) {
           setLoadingState("notfound");
-          setErrorMessage("The requested literary group does not exist.");
+          setErrorMessage("The requested literary group does not exist in our records.");
         } else {
           setLoadingState("error");
           setErrorMessage("Failed to fetch literary group details. Please try again later.");
@@ -157,33 +151,34 @@ export default function LiteraryGroupView() {
     }
   }, [id]);
 
-  const handleDeleteChange = (e) => setDeleteConfirmText(e.target.value);
-
-  const handleDeleteSubmit = async (e) => {
+  const handleDelete = async (e) => { // Renamed from handleDeleteSubmit
     e.preventDefault();
-    if (isDeleting) return;
+    if (isDeleting || !literaryGroup) return;
 
-    if (deleteConfirmText === literaryGroup.name) {
+    if (deleteInput === literaryGroup.name) { // Changed from deleteConfirmText
       setIsDeleting(true);
       setDeleteInfo("");
       try {
+        console.log(`[LiteraryGroupView] Attempting to delete /literary-group/${id}`);
         const response = await api.delete(`/literary-group/${id}`);
+        console.log(`[LiteraryGroupView] Delete /literary-group/${id} response status:`, response.status);
         if (response.status === 200 || response.status === 204) {
-          navigate("/");
+          navigate("/literary-groups"); // Navigate to literary groups list (assuming /literary-groups is the correct path)
         } else {
           setDeleteInfo(response.data?.msg || "Failed to delete the literary group. Please try again.");
         }
       } catch (err) {
+        console.error("[LiteraryGroupView] Error deleting literary group:", err.response || err.message);
         setDeleteInfo(err.response?.data?.msg || "An error occurred while deleting the literary group.");
       } finally {
         setIsDeleting(false);
       }
     } else {
-      setDeleteInfo("Incorrect name entered. Deletion canceled. Please type the literary group name exactly as shown.");
+      setDeleteInfo("Incorrect name. Please type the literary group name exactly as shown to confirm deletion.");
     }
   };
 
-  if (loadingState === "loading" || authLoading) {
+  if (loadingState === "loading") { // Removed || authLoading
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
         <LoadingSpinner />
@@ -191,24 +186,29 @@ export default function LiteraryGroupView() {
     );
   }
 
-  if (loadingState === "notfound" || loadingState === "error") {
+  if (loadingState === "error") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
         <InfoMessageDisplay
-          title={loadingState === "notfound" ? "Literary Group Not Found" : "Error"}
+          title="Error"
           message={errorMessage}
-          isError={loadingState === "error"}
+          isError={true}
+          backLink="/literary-groups" // Consistent backlink
+          backLinkText="Back to Literary Groups"
         />
       </div>
     );
   }
-
-  if (!literaryGroup) {
+  
+  if (loadingState === "notfound" || !literaryGroup) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 px-4 antialiased">
         <InfoMessageDisplay
-          title="Information Unavailable"
-          message="Literary group details cannot be displayed at this time."
+          title="Literary Group Not Found"
+          message={errorMessage || "The requested literary group could not be found."}
+          isError={false} // Not an error, just not found
+          backLink="/literary-groups" // Consistent backlink
+          backLinkText="Back to Literary Groups"
         />
       </div>
     );
@@ -229,23 +229,25 @@ export default function LiteraryGroupView() {
               Literary Group Information
             </h2>
             <DetailItem label="Name" value={literaryGroup.name} />
-            <DetailItem label="Years Active" value={literaryGroup.years || "-"} />
-            <DetailItem label="Key Characteristics" value={literaryGroup.characteristics || "-"} />
+            <DetailItem label="Years Active" value={literaryGroup.years} />
+            <DetailItem label="Key Characteristics" value={literaryGroup.characteristics} />
+            <DetailItem label="Literary Group ID" value={literaryGroup._id} valueClassName="text-xs text-slate-500 font-mono" />
           </section>
 
+          {/* Admin Controls: Delete Section */}
           {isAdmin && (
             <section className="pt-6 border-t border-slate-700">
               <h2 className="text-xl font-semibold text-red-400 mb-3">Delete This Literary Group</h2>
               <p className="text-sm text-slate-400 mb-4">
-                To permanently delete this literary group, please type its full name:{" "}
+                To permanently delete this literary group, type its full name:{" "}
                 <strong className="text-slate-200">{literaryGroup.name}</strong> in the box below and click delete. This action cannot be undone.
               </p>
-              <form onSubmit={handleDeleteSubmit} className="space-y-4">
+              <form onSubmit={handleDelete} className="space-y-4"> {/* Changed to handleDelete */}
                 <input
                   type="text"
                   placeholder="Type full literary group name to confirm deletion"
-                  value={deleteConfirmText}
-                  onChange={handleDeleteChange}
+                  value={deleteInput} // Changed from deleteConfirmText
+                  onChange={(e) => setDeleteInput(e.target.value)} // Changed to setDeleteInput
                   required
                   className="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-700 text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 placeholder-slate-500 transition-colors"
                 />
@@ -265,20 +267,21 @@ export default function LiteraryGroupView() {
             </section>
           )}
 
+          {/* Action Buttons: Update and Back */}
           <section className="pt-6 border-t border-slate-700 flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-3 sm:space-y-0">
-            {isAdmin && (
+            {isAdmin && ( // Update button also admin-only
               <Link
-                to={`/updateliterary-group/${id}`}
+                to={`/updateliterary-group/${id}`} // Ensure this route exists and is protected
                 className="w-full sm:w-auto text-center px-6 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all"
               >
                 Update Literary Group
               </Link>
             )}
             <Link
-              to="/"
+              to="/literary-groups" // Link to the literary groups list (or appropriate page)
               className="w-full sm:w-auto text-center px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-slate-100 font-semibold rounded-lg shadow-md transition-colors"
             >
-              Back to Library
+              Back to Literary Groups
             </Link>
           </section>
         </div>
