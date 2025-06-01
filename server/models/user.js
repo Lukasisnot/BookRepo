@@ -6,6 +6,7 @@ const schema = mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    favoriteBooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Book' }]
 },{timestamps: true});
 
 schema.methods.comparePassword = async function (candidatePassword) {

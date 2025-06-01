@@ -9,9 +9,14 @@ router.post("/register", userController.registerUser);
 router.post("/login", userController.loginUser);
 router.get("/logout", userController.logoutUser);
 
-// NEW: Route for /user/me
+// Route for /user/me
 // It needs to be protected by authenticateUser so req.userId is available
 router.get("/me", auth.authenticateUser, userController.getMe);
+
+// NEW: Route for getting current user's favorite books
+// It also needs to be protected by authenticateUser
+router.get("/me/favorites", auth.authenticateUser, userController.getUserFavoriteBooks);
+
 
 // Example of using authorizeUser for a backend admin-only endpoint
 // router.get("/admin-stuff", auth.authenticateUser, auth.authorizeUser('admin'), (req, res) => {

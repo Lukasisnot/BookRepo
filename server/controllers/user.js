@@ -95,7 +95,6 @@ exports.logoutUser = (req, res) => {
   res.status(200).json({ status: 'success', message: 'Logged out successfully' });
 };
 
-// NEW: Endpoint to get current user details
 exports.getMe = async (req, res) => {
   // req.userId should be set by authenticateUser middleware
   if (!req.userId) {
@@ -113,5 +112,38 @@ exports.getMe = async (req, res) => {
   } catch (error) {
     console.error("Error fetching current user:", error);
     res.status(500).json({ status: 'error', error: 'Failed to fetch user details' });
+  }
+};
+
+// NEW: Endpoint to get current user's favorite books
+exports.getUserFavoriteBooks = async (req, res) => {
+  // req.userId should be set by authenticateUser middleware
+  if (!req.userId) {
+    return res.status(401).json({ status: 'fail', error: 'Not authenticated' });
+  }
+  try {
+    // Find the user by their ID.
+    // .populate('favoriteBooks') will attempt to replace the ObjectIds in favoriteBooks
+    // with the actual documents from the referenced collection (e.g., 'Book').
+    // This requires the 'favoriteBooks' path in the User schema to have a 'ref' option.
+    // If 'ref' is not set, it will likely return the array of ObjectIds.
+    // .select('favoriteBooks') ensures that we primarily fetch the favoriteBooks field.
+    const user = await User.findById(req.userId)
+                           .populate('favoriteBooks') 
+                           .select('favoriteBooks _id'); // Also select _id to ensure user object is valid
+
+    if (!user) {
+      return res.status(404).json({ status: 'fail', error: 'User not found' });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      payload: {
+        favoriteBooks: user.favoriteBooks // This will be an array of populated book objects or ObjectIds
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching user's favorite books:", error);
+    res.status(500).json({ status: 'error', error: "Failed to fetch user's favorite books" });
   }
 };

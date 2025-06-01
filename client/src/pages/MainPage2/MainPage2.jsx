@@ -76,7 +76,15 @@ const colorPalettes = [
   },
 ];
 
-const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
+const Book = ({
+  book,
+  onBookClick,
+  isSelected,
+  isDesktop,
+  bookRef,
+  isStarred, // New prop
+  onToggleStar, // New prop
+}) => {
   const bookBaseHeightMobile = 260;
   const bookBaseHeightDesktop = 300;
 
@@ -174,8 +182,49 @@ const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
         <div
           className={`relative z-[5] ml-6 md:ml-8 flex flex-col h-full p-2 md:p-2.5 overflow-hidden ${coverPageEffect}`}
         >
+          {/* Star Toggle Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent book click event
+              onToggleStar(book.id);
+            }}
+            className={`absolute top-2 right-2 p-1 rounded-full ${book.textColor} hover:bg-black/20 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-offset-transparent focus:ring-white/60 z-10 transition-colors`}
+            aria-label={isStarred ? `Unstar ${book.title}` : `Star ${book.title}`}
+            title={isStarred ? `Unstar book` : `Star book`}
+          >
+            {isStarred ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-5 h-5 md:w-6 md:h-6"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434L10.788 3.21z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5 md:w-6 md:h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.31h5.518a.563.563 0 01.329.89l-4.462 3.242a.563.563 0 00-.192.518l1.6 5.171a.563.563 0 01-.84.61l-4.725-3.354a.563.563 0 00-.652 0l-4.725 3.354a.563.563 0 01-.84-.61l1.6-5.171a.563.563 0 00-.192-.518l-4.462-3.242a.563.563 0 01.329-.89h5.518a.563.563 0 00.475-.31L11.48 3.5z"
+                />
+              </svg>
+            )}
+          </button>
+
           <h3
-            className={`font-bold text-sm md:text-base ${book.textColor} leading-tight drop-shadow-sm mb-0.5`}
+            className={`font-bold text-sm md:text-base ${book.textColor} leading-tight drop-shadow-sm mb-0.5 pr-8`} // Added pr-8 to prevent overlap with star
           >
             {book.title}
           </h3>
@@ -210,14 +259,15 @@ const Book = ({ book, onBookClick, isSelected, isDesktop, bookRef }) => {
 
 // Main Page Component
 function AutoCenterSelectedBookPage() {
-  const [rawBooks, setRawBooks] = useState([]); // Renamed to avoid confusion
+  const [rawBooks, setRawBooks] = useState([]);
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null);
-  const [booksData, setBooksData] = useState([]); // This will hold the processed book data
+  const [booksData, setBooksData] = useState([]);
 
-  // New states for handling filtered data
   const [displayedBooks, setDisplayedBooks] = useState([]);
   const [activeSearchTerm, setActiveSearchTerm] = useState("");
+  
+  const [starredBookIds, setStarredBookIds] = useState(new Set()); // New state for starred books
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -259,7 +309,7 @@ function AutoCenterSelectedBookPage() {
     if (!isLoaded || rawBooks.length === 0) {
       if (isLoaded && rawBooks.length === 0 && !error) {
         setBooksData([]);
-        setDisplayedBooks([]); // Clear displayed books too
+        setDisplayedBooks([]);
       }
       return;
     }
@@ -284,8 +334,7 @@ function AutoCenterSelectedBookPage() {
 
     const newBooksData = rawBooks.map(getBookData);
     setBooksData(newBooksData);
-    // Initialize displayedBooks with all booksData if no search term is active
-    // This will be handled by SearchBar's initial call to onSearchResults
+    // Displayed books will be set by SearchBar's onSearchResults or an initial effect
   }, [rawBooks, isLoaded, error]);
 
   const [selectedBookId, setSelectedBookId] = useState(null);
@@ -321,8 +370,23 @@ function AutoCenterSelectedBookPage() {
     setSelectedBookId(null);
   }, []);
 
+  // Callback for toggling a book's star status
+  const handleToggleStar = useCallback((bookId) => {
+    setStarredBookIds(prevStarredIds => {
+      const newStarredIds = new Set(prevStarredIds);
+      if (newStarredIds.has(bookId)) {
+        newStarredIds.delete(bookId);
+      } else {
+        newStarredIds.add(bookId);
+      }
+      // console.log("Starred IDs:", newStarredIds); // For debugging
+      return newStarredIds;
+    });
+  }, []);
+
+
   const selectedBookDetails = useMemo(
-    () => booksData.find((b) => b.id === selectedBookId), // Search in original booksData for details
+    () => booksData.find((b) => b.id === selectedBookId),
     [booksData, selectedBookId]
   );
 
@@ -331,7 +395,7 @@ function AutoCenterSelectedBookPage() {
       if (
         selectedBookId !== null &&
         !event.target.closest(
-          '[role="button"], [aria-label^="Close"], [aria-label^="Read more"], input[type="text"]' // Ensure clicking search bar doesn't deselect
+          '[role="button"], [aria-label^="Close"], [aria-label^="Read more"], input[type="text"], [aria-label^="Star"], [aria-label^="Unstar"]' // Include star buttons
         )
       ) {
         deselectBook();
@@ -341,12 +405,13 @@ function AutoCenterSelectedBookPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [selectedBookId, deselectBook]);
 
-  // Callback for SearchBar
   const handleSearchResults = useCallback((results, term) => {
     setDisplayedBooks(results);
     setActiveSearchTerm(term);
-    deselectBook();
-  }, []);
+    if (selectedBookId && !results.find(book => book.id === selectedBookId)) {
+      deselectBook(); // Deselect if the selected book is not in search results
+    }
+  }, [selectedBookId, deselectBook]); // Added selectedBookId & deselectBook dependency
 
   const desktopBookPopUpHeight = 48;
   const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20;
@@ -395,10 +460,8 @@ function AutoCenterSelectedBookPage() {
         ariaLabel="Search books"
       />
 
-      
-
       <main className="flex-grow flex flex-col items-center justify-center w-full px-2 sm:px-4">
-        {error && booksData.length > 0 && ( // Show error even if some (possibly cached) books are displayed
+        {error && booksData.length > 0 && (
           <p className="text-red-400 mb-4 text-center">
             {error} (Showing available data)
           </p>
@@ -443,6 +506,8 @@ function AutoCenterSelectedBookPage() {
                   isSelected={selectedBookId === book.id}
                   isDesktop={isDesktop}
                   bookRef={bookRefs.current[book.id]}
+                  isStarred={starredBookIds.has(book.id)} // Pass starred status
+                  onToggleStar={handleToggleStar} // Pass toggle callback
                 />
               );
             })}

@@ -12,7 +12,7 @@ import About from "./About/About";
 import PeriodCreateForm from "./Period/PeriodCreateForm/PeriodCreateForm";
 import CreatedPeriod from "./Period/PeriodCreateForm/CreatedPeriod";
 import PeriodUpdateForm from "./Period/PeriodUpdateForm/PeriodUpdateForm";
-import PeriodView from "./Period/PeriodView/PeriodView"; // Ensure this component exists
+import PeriodView from "./Period/PeriodView/PeriodView";
 import PeriodList from "./Period/PeriodList/PeriodList";
 
 import LiteraryGroupCreateForm from "./LiteraryGroup/LiteraryGroupCreateForm/LiteraryGroupCreateForm";
@@ -32,6 +32,7 @@ import CreatedBook from "./Book/BookCreateForm/CreatedBook";
 import BookView from "./Book/BookView/BookView";
 import BookUpdateForm from "./Book/BookUpdateForm/BookUpdateForm";
 import BookList from "./Book/BookList/BookList";
+import FavoriteBookList from "./Book/BookList/FavoriteBookList";
 
 // Component Imports
 import LoginForm from '../components/LoginForm';
@@ -49,23 +50,18 @@ function AppRoutesLogic() {
   const [authError, setAuthError] = useState(null);
 
   const fetchUserSession = useCallback(async () => {
-    // console.log("[AppRoutesLogic] fetchUserSession called");
     setAuthLoading(true);
     setAuthError(null);
     try {
       const response = await API.get('/user/me');
-      // console.log("[AppRoutesLogic] /user/me response status:", response.status);
       if (response.status === 200 && response.data.payload) {
-        // console.log("[AppRoutesLogic] User session fetched:", response.data.payload);
         setUser(response.data.payload);
         localStorage.setItem('isUserLoggedIn', 'true');
       } else {
-        // console.log("[AppRoutesLogic] No user payload or non-200 status from /user/me");
         setUser(null);
         localStorage.removeItem('isUserLoggedIn');
       }
     } catch (err) {
-      // console.error("[AppRoutesLogic] Error fetching user session:", err.response || err.message);
       setUser(null);
       localStorage.removeItem('isUserLoggedIn');
       if (err.response && err.response.status !== 401) {
@@ -73,7 +69,6 @@ function AppRoutesLogic() {
       }
     } finally {
       setAuthLoading(false);
-      // console.log("[AppRoutesLogic] fetchUserSession finished, authLoading:", false);
     }
   }, []);
 
@@ -82,14 +77,11 @@ function AppRoutesLogic() {
   }, [fetchUserSession]);
 
   const handleLogin = async (email, password) => {
-    // console.log("[AppRoutesLogic] handleLogin called");
     setAuthLoading(true);
     setAuthError(null);
     try {
       const response = await API.post('/user/login', { email, password });
-      // console.log("[AppRoutesLogic] /user/login response status:", response.status);
       if (response.status === 200 && response.data.payload.user) {
-        // console.log("[AppRoutesLogic] Login successful, user:", response.data.payload.user);
         setUser(response.data.payload.user);
         localStorage.setItem('isUserLoggedIn', 'true');
         const from = location.state?.from?.pathname || (response.data.payload.user.role === 'admin' ? '/dashboard' : '/');
@@ -99,7 +91,6 @@ function AppRoutesLogic() {
         throw new Error(response.data.error || 'Login failed due to unexpected response.');
       }
     } catch (err) {
-      // console.error("[AppRoutesLogic] Login error:", err.response?.data?.error || err.message);
       const errorMessage = err.response?.data?.error || err.message || 'Login failed.';
       setAuthError(errorMessage);
       setUser(null);
@@ -111,12 +102,10 @@ function AppRoutesLogic() {
   };
 
   const handleLogout = async () => {
-    // console.log("[AppRoutesLogic] handleLogout called");
     setAuthLoading(true);
     setAuthError(null);
     try {
       await API.get('/user/logout');
-      // console.log("[AppRoutesLogic] /user/logout call successful");
     } catch (err) {
       console.error('[AppRoutesLogic] Logout API call failed:', err);
     } finally {
@@ -124,21 +113,18 @@ function AppRoutesLogic() {
       localStorage.removeItem('isUserLoggedIn');
       setAuthLoading(false);
       navigate('/login');
-      // console.log("[AppRoutesLogic] Logout finished, user set to null");
     }
   };
   
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
   if (authLoading && !user && !['/login', '/register'].includes(location.pathname)) {
-    // console.log("[AppRoutesLogic] Displaying main app loader");
     return (
       <div className="flex justify-center items-center h-screen bg-slate-900">
         <Spinner size="xl" aria-label="Loading application..." />
       </div>
     );
   }
-  // console.log("[AppRoutesLogic] Rendering. User:", user, "AuthLoading:", authLoading);
 
   return (
     <>
@@ -163,6 +149,8 @@ function AppRoutesLogic() {
             <NavbarLink><Spinner size="sm" /></NavbarLink>
           ) : user ? (
             <>
+              {/* *** NEW NAVBAR LINK *** */}
+              <NavbarLink as={Link} to="/my-favorites" className="text-indigo-500 hover:text-sky-400">My Favorites</NavbarLink>
               {user.role === 'admin' && (
                 <NavbarLink as={Link} to="/dashboard" className="text-indigo-500 hover:text-sky-400">Admin Dashboard</NavbarLink>
               )}
@@ -179,7 +167,7 @@ function AppRoutesLogic() {
         </NavbarCollapse>
       </Navbar>
 
-      <div className="w-full p-4">
+      <div className="w-full p-4"> {/* Consider if p-4 is needed if pages manage their own padding */}
         <Routes>
           <Route path="/" element={<MainPage2 />} />
           <Route path="/about" element={<About />} />
@@ -211,7 +199,7 @@ function AppRoutesLogic() {
           <Route path="/createperiod" element={<ProtectedRoute><PeriodCreateForm /></ProtectedRoute>} />
           <Route path="/createdperiod/:id" element={<ProtectedRoute><CreatedPeriod /></ProtectedRoute>} />
           <Route path="/updateperiod/:id" element={<ProtectedRoute><PeriodUpdateForm /></ProtectedRoute>} />
-          <Route path="/period/:id" element={<PeriodView user={user} />} /> {/* Passing user prop */}
+          <Route path="/period/:id" element={<PeriodView user={user} />} />
           <Route path="/period" element={<PeriodList />} />
 
           {/* Literary Group Routes */}
@@ -234,6 +222,16 @@ function AppRoutesLogic() {
           <Route path="/updatebook/:id" element={<ProtectedRoute><BookUpdateForm /></ProtectedRoute>} />
           <Route path="/book/:id" element={<BookView user={user} />} />
           <Route path="/book" element={<BookList />} />
+
+          {/* *** NEW FAVORITE BOOKS ROUTE *** */}
+          <Route 
+            path="/my-favorites" 
+            element={
+              <ProtectedRoute>
+                <FavoriteBookList />
+              </ProtectedRoute>
+            } 
+          />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
