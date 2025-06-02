@@ -86,6 +86,7 @@ const Book = ({
   bookRef,
   isStarred,
   onToggleStar,
+  animationIndex, // NEW: Prop for animation staggering
 }) => {
   const bookBaseHeightMobile = 260;
   const bookBaseHeightDesktop = 300;
@@ -98,6 +99,18 @@ const Book = ({
     const tiltMultiplier = isDesktop ? 15 : 5;
     return baseRandomFactor * tiltMultiplier;
   }, [baseRandomFactor, isDesktop]);
+
+  const [isReadyToAnimateIn, setIsReadyToAnimateIn] = useState(false); // NEW: State for entrance animation
+
+  // NEW: Effect to trigger entrance animation
+  useEffect(() => {
+    // Set a small timeout to allow initial styles to apply before transitioning
+    const timer = setTimeout(() => {
+      setIsReadyToAnimateIn(true);
+    }, 50); // A small delay ensures the browser registers the initial state
+
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []); // Run only once on mount
 
   const dynamicWrapperStyles = useMemo(() => {
     let transformValue = `rotate(${randomTiltDeg}deg)`;
@@ -116,8 +129,10 @@ const Book = ({
       transform: transformValue,
       zIndex: zIndexValue,
       willChange: "transform, z-index",
+      // NEW: Add transition delay for the entrance animation
+      transitionDelay: `${animationIndex * 75}ms`, // Stagger by 75ms per book
     };
-  }, [isSelected, isDesktop, randomTiltDeg]);
+  }, [isSelected, isDesktop, randomTiltDeg, animationIndex]); // MODIFIED: Added animationIndex dependency
 
   const coverPageEffect =
     "before:content-[''] before:absolute before:inset-y-0 before:right-0 before:w-[3px] before:bg-white/10 before:rounded-r-sm before:opacity-70";
@@ -125,7 +140,7 @@ const Book = ({
   return (
     <div
       ref={bookRef}
-      style={dynamicWrapperStyles}
+      style={dynamicWrapperStyles} // MODIFIED: Now includes transitionDelay
       className={`
         flex-shrink-0 
         w-44 h-64 md:w-52 md:h-72
@@ -133,7 +148,8 @@ const Book = ({
         md:-mr-10
         last:md:mr-0
         relative                 
-        transition-transform duration-300 ease-out
+        transition-all duration-500 ease-out // MODIFIED: Using transition-all and a longer duration for entrance
+        ${isReadyToAnimateIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} // NEW: Animation classes
       `}
     >
       <div
@@ -142,7 +158,7 @@ const Book = ({
             rounded-md shadow-lg cursor-pointer 
             border-2 ${book.borderColor}
             flex flex-col justify-between p-0.5
-            transition-shadow duration-300 ease-out
+            transition-shadow duration-300 ease-out 
             hover:shadow-xl
             ${
               isDesktop && !isSelected
@@ -162,6 +178,7 @@ const Book = ({
         onKeyPress={(e) => e.key === "Enter" && onBookClick(book.id, bookRef)}
         aria-label={`Select book: ${book.title}`}
       >
+        {/* ... rest of the Book component remains the same ... */}
         <div
           className={`absolute left-0 top-0 bottom-0 w-6 md:w-8 ${book.spineColor} rounded-l-sm shadow-inner flex items-center justify-center z-0`}
         >
@@ -257,8 +274,10 @@ const Book = ({
   );
 };
 
+
 // Main Page Component
 function AutoCenterSelectedBookPage() {
+  // ... (all existing state and useEffect hooks remain the same) ...
   const [rawBooks, setRawBooks] = useState([]);
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null);
@@ -267,7 +286,7 @@ function AutoCenterSelectedBookPage() {
   const [activeSearchTerm, setActiveSearchTerm] = useState("");
   
   const [starredBookIds, setStarredBookIds] = useState(new Set());
-  const [starringError, setStarringError] = useState(null); // New state for starring errors
+  const [starringError, setStarringError] = useState(null); 
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -330,36 +349,26 @@ function AutoCenterSelectedBookPage() {
     setBooksData(newBooksData);
   }, [rawBooks, isLoaded, error]);
 
-  // NEW: Effect to load user's favorite books
   useEffect(() => {
     const fetchUserFavorites = async () => {
       try {
-        // Assuming 'api' client handles auth (e.g., sends cookies)
         const response = await api.get("/user/me/favorites");
         if (response.status === 200 && response.data.payload && response.data.payload.favoriteBooks) {
-          // The backend returns populated favoriteBooks, so we map to get IDs
           const favoriteIds = new Set(response.data.payload.favoriteBooks.map(book => book._id));
           setStarredBookIds(favoriteIds);
         }
       } catch (err) {
-        // Silently fail if user is not logged in (401), or log other errors.
         if (err.response && err.response.status !== 401) {
           console.error("Error fetching user favorites:", err);
-          // Optionally set a general error for favorites loading
-          // setStarringError("Could not load your favorite books.");
         } else if (!err.response) {
           console.error("Network error fetching user favorites:", err);
         }
       }
     };
-
-    // Fetch favorites after initial book data is loaded.
-    // This depends on `isLoaded` (for general data) and `booksData` (to ensure book context).
-    // In a real app with auth context, you might also depend on user authentication status.
     if (isLoaded && booksData.length > 0) {
         fetchUserFavorites();
     }
-  }, [isLoaded, booksData]); // Re-fetch if booksData or loaded status changes.
+  }, [isLoaded, booksData]);
 
 
   const [selectedBookId, setSelectedBookId] = useState(null);
@@ -394,13 +403,11 @@ function AutoCenterSelectedBookPage() {
     setSelectedBookId(null);
   }, []);
 
-  // UPDATED: Callback for toggling a book's star status with API integration
   const handleToggleStar = useCallback(async (bookId) => {
-    setStarringError(null); // Clear previous errors
+    setStarringError(null); 
     const isCurrentlyStarred = starredBookIds.has(bookId);
-    const originalStarredBookIds = new Set(starredBookIds); // For rollback
+    const originalStarredBookIds = new Set(starredBookIds); 
 
-    // Optimistic UI update
     setStarredBookIds(prevStarredIds => {
       const newStarredIds = new Set(prevStarredIds);
       if (isCurrentlyStarred) {
@@ -413,21 +420,17 @@ function AutoCenterSelectedBookPage() {
 
     try {
       if (isCurrentlyStarred) {
-        // API call to unstar
         await api.delete(`/user/me/favorites/${bookId}`);
       } else {
-        // API call to star
-        await api.post(`/user/me/favorites/${bookId}`, {}); // Send empty object as body if required by POST
+        await api.post(`/user/me/favorites/${bookId}`, {}); 
       }
     } catch (err) {
       console.error("Error toggling star status:", err);
-      // Rollback optimistic update on error
       setStarredBookIds(originalStarredBookIds); 
 
       if (err.response) {
         if (err.response.status === 401) {
           setStarringError("Please log in to manage your favorite books.");
-          // Here you might trigger a login modal or redirect
         } else {
           setStarringError(err.response.data.error || "Failed to update favorite status. Please try again.");
         }
@@ -437,7 +440,7 @@ function AutoCenterSelectedBookPage() {
         setStarringError("An unexpected error occurred.");
       }
     }
-  }, [starredBookIds]); // Dependency: starredBookIds
+  }, [starredBookIds]); 
 
   const selectedBookDetails = useMemo(
     () => booksData.find((b) => b.id === selectedBookId),
@@ -487,6 +490,7 @@ function AutoCenterSelectedBookPage() {
 
   return (
     <div className="min-h-screen flex flex-col px-0 overflow-x-hidden text-slate-100">
+      {/* ... (Header, SearchBar remain the same) ... */}
       <header className="w-full text-center py-8 sm:py-10 shrink-0 px-4">
         <h1 className="text-3xl pb-2 sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 mb-2 sm:mb-3">
           The Scholar's Auto-Centering Shelf
@@ -513,6 +517,7 @@ function AutoCenterSelectedBookPage() {
         placeholder="Search books by title or author..."
         ariaLabel="Search books"
       />
+
 
       <main className="flex-grow flex flex-col items-center justify-center w-full px-2 sm:px-4">
         {error && booksData.length > 0 && (
@@ -548,7 +553,7 @@ function AutoCenterSelectedBookPage() {
                 : {}
             }
           >
-            {displayedBooks.map((book) => {
+            {displayedBooks.map((book, index) => { // MODIFIED: Added index
               if (!bookRefs.current[book.id]) {
                 bookRefs.current[book.id] = React.createRef();
               }
@@ -560,8 +565,9 @@ function AutoCenterSelectedBookPage() {
                   isSelected={selectedBookId === book.id}
                   isDesktop={isDesktop}
                   bookRef={bookRefs.current[book.id]}
-                  isStarred={starredBookIds.has(book.id)} // Correctly reflects persisted state
-                  onToggleStar={handleToggleStar} // Connects to API-aware handler
+                  isStarred={starredBookIds.has(book.id)}
+                  onToggleStar={handleToggleStar}
+                  animationIndex={index} // NEW: Pass index for animation
                 />
               );
             })}
@@ -569,7 +575,7 @@ function AutoCenterSelectedBookPage() {
         )}
       </main>
 
-      {/* NEW: Display for starring errors */}
+      {/* ... (Starring error display and Footer remain the same) ... */}
       {starringError && (
         <div 
           style={{
@@ -577,7 +583,7 @@ function AutoCenterSelectedBookPage() {
             bottom: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(220, 38, 38, 0.95)', // Tailwind red-600 equivalent
+            backgroundColor: 'rgba(220, 38, 38, 0.95)', 
             color: 'white',
             padding: '12px 24px',
             borderRadius: '8px',
@@ -585,7 +591,7 @@ function AutoCenterSelectedBookPage() {
             zIndex: 1000,
             display: 'flex',
             alignItems: 'center',
-            fontSize: '0.875rem', // text-sm
+            fontSize: '0.875rem', 
           }}
         >
           <span>{starringError}</span>
@@ -597,7 +603,7 @@ function AutoCenterSelectedBookPage() {
               border: 'none',
               color: 'white',
               fontWeight: 'bold',
-              fontSize: '1rem', // text-base
+              fontSize: '1rem', 
               cursor: 'pointer',
               lineHeight: '1',
             }}
