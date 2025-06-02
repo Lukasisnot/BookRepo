@@ -77,7 +77,7 @@ const colorPalettes = [
   },
 ];
 
-// Book Component (remains largely unchanged, already accepts isStarred and onToggleStar)
+// Book Component
 const Book = ({
   book,
   onBookClick,
@@ -86,7 +86,7 @@ const Book = ({
   bookRef,
   isStarred,
   onToggleStar,
-  animationIndex, // NEW: Prop for animation staggering
+  animationIndex,
 }) => {
   const bookBaseHeightMobile = 260;
   const bookBaseHeightDesktop = 300;
@@ -96,43 +96,95 @@ const Book = ({
   }, [book.id]);
 
   const randomTiltDeg = useMemo(() => {
-    const tiltMultiplier = isDesktop ? 15 : 5;
+    const tiltMultiplier = isDesktop ? 10 : 4;
     return baseRandomFactor * tiltMultiplier;
   }, [baseRandomFactor, isDesktop]);
 
-  const [isReadyToAnimateIn, setIsReadyToAnimateIn] = useState(false); // NEW: State for entrance animation
+  const [isReadyToAnimateIn, setIsReadyToAnimateIn] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [allowInteractionDelay, setAllowInteractionDelay] = useState(true);
 
-  // NEW: Effect to trigger entrance animation
   useEffect(() => {
-    // Set a small timeout to allow initial styles to apply before transitioning
-    const timer = setTimeout(() => {
+    const entranceTimer = setTimeout(() => {
       setIsReadyToAnimateIn(true);
-    }, 50); // A small delay ensures the browser registers the initial state
+    }, 50); // Initial delay before starting any animation
 
-    return () => clearTimeout(timer); // Cleanup on unmount
-  }, []); // Run only once on mount
+    const thisBookStaggerDelay = animationIndex * 75;
+    const transitionDuration = 300; // Duration from className for transform/opacity
+    const initialRenderDelay = 50; // The 50ms timeout before setting isReadyToAnimateIn
+
+    // Delay to allow entrance animation to mostly complete before removing individual stagger
+    // for subsequent interactions (hover, select).
+    const interactionDelayTimer = setTimeout(() => {
+      setAllowInteractionDelay(false);
+    }, initialRenderDelay + thisBookStaggerDelay + transitionDuration + 100);
+
+    return () => {
+      clearTimeout(entranceTimer);
+      clearTimeout(interactionDelayTimer);
+    };
+  }, [animationIndex]);
 
   const dynamicWrapperStyles = useMemo(() => {
-    let transformValue = `rotate(${randomTiltDeg}deg)`;
-    let zIndexValue = 10;
+    // Entrance animation parameters (equivalent to original Tailwind: translate-y-12, scale-95)
+    const entranceTranslateYInitial = 48; // px (3rem, assuming 1rem = 16px)
+    const entranceScaleInitial = 0.95;
 
-    if (isSelected) {
-      zIndexValue = 40;
-      if (isDesktop) {
-        transformValue = `translateY(-48px) scale(1.1) rotate(0deg)`;
-      } else {
-        transformValue = `translateY(-20px) scale(1.05) rotate(0deg)`;
+    let translateY, scale, rotate, currentOpacity, zIndexValue;
+
+    if (!isReadyToAnimateIn) {
+      // Initial state: "before" animation (slid down, scaled down, tilted, transparent)
+      translateY = entranceTranslateYInitial;
+      scale = entranceScaleInitial;
+      rotate = randomTiltDeg; // Apply initial tilt from the start
+      currentOpacity = 0;
+      zIndexValue = 5; // Lower z-index while hidden/animating in
+    } else {
+      // "After" animation state or interactive states
+      currentOpacity = 1;
+
+      // Base "animated-in" state (not hovered, not selected)
+      translateY = 0;
+      scale = 1.0;
+      rotate = randomTiltDeg;
+      zIndexValue = 10; // Default z-index
+
+      // Apply hover effects if active and not selected
+      if (isHovered && !isSelected) {
+        translateY = -8;    // Hover: slight lift
+        scale = 1.03;       // Hover: slight scale up
+        // rotate remains randomTiltDeg
+        zIndexValue = 30;   // Higher z-index on hover
+      }
+
+      // Apply selected effects (these override hover effects if also selected)
+      if (isSelected) {
+        translateY = isDesktop ? -48 : -20; // Selected: significant lift
+        scale = isDesktop ? 1.1 : 1.05;    // Selected: significant scale up
+        rotate = 0;                         // Selected: straighten out
+        zIndexValue = 40;                   // Highest z-index when selected
       }
     }
 
+    const transformValue = `translateY(${translateY}px) scale(${scale}) rotate(${rotate}deg)`;
+
     return {
       transform: transformValue,
+      opacity: currentOpacity,
       zIndex: zIndexValue,
-      willChange: "transform, z-index",
-      // NEW: Add transition delay for the entrance animation
-      transitionDelay: `${animationIndex * 75}ms`, // Stagger by 75ms per book
+      willChange: "transform, opacity", // Hint for browser optimization
+      // Stagger delay for the entrance animation. Set to 0ms after entrance.
+      transitionDelay: allowInteractionDelay ? `${animationIndex * 75}ms` : "0ms",
     };
-  }, [isSelected, isDesktop, randomTiltDeg, animationIndex]); // MODIFIED: Added animationIndex dependency
+  }, [
+    isReadyToAnimateIn, // Crucial new dependency
+    isSelected,
+    isDesktop,
+    randomTiltDeg,
+    animationIndex,
+    isHovered,
+    allowInteractionDelay,
+  ]);
 
   const coverPageEffect =
     "before:content-[''] before:absolute before:inset-y-0 before:right-0 before:w-[3px] before:bg-white/10 before:rounded-r-sm before:opacity-70";
@@ -140,36 +192,29 @@ const Book = ({
   return (
     <div
       ref={bookRef}
-      style={dynamicWrapperStyles} // MODIFIED: Now includes transitionDelay
+      style={dynamicWrapperStyles}
       className={`
-        flex-shrink-0 
+        isolate
+        flex-shrink-0
         w-44 h-64 md:w-52 md:h-72
         mb-[-160px] md:mb-0
         md:-mr-10
         last:md:mr-0
-        relative                 
-        transition-all duration-500 ease-out // MODIFIED: Using transition-all and a longer duration for entrance
-        ${isReadyToAnimateIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} // NEW: Animation classes
+        relative
+        transition-[transform,opacity] duration-300 ease-out
+        ${/* Entrance animation classes for transform/opacity are now handled by dynamicWrapperStyles */''}
       `}
+      onMouseEnter={() => !allowInteractionDelay && setIsHovered(true)} // Delay hover until initial animation pass
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         className={`
             w-full h-full ${book.color}
-            rounded-md shadow-lg cursor-pointer 
+            rounded-md shadow-lg cursor-pointer
             border-2 ${book.borderColor}
             flex flex-col justify-between p-0.5
-            transition-shadow duration-300 ease-out 
+            transition-shadow duration-300 ease-out
             hover:shadow-xl
-            ${
-              isDesktop && !isSelected
-                ? "md:hover:scale-[1.02] md:hover:-translate-y-1 md:hover:!rotate-0"
-                : ""
-            }
-            ${
-              !isDesktop && !isSelected
-                ? "hover:scale-[1.02] hover:-translate-y-1 hover:!rotate-0"
-                : ""
-            }
             ${isSelected ? "shadow-2xl" : ""}
         `}
         onClick={() => onBookClick(book.id, bookRef)}
@@ -178,7 +223,7 @@ const Book = ({
         onKeyPress={(e) => e.key === "Enter" && onBookClick(book.id, bookRef)}
         aria-label={`Select book: ${book.title}`}
       >
-        {/* ... rest of the Book component remains the same ... */}
+        {/* Spine */}
         <div
           className={`absolute left-0 top-0 bottom-0 w-6 md:w-8 ${book.spineColor} rounded-l-sm shadow-inner flex items-center justify-center z-0`}
         >
@@ -188,15 +233,15 @@ const Book = ({
               width: `${
                 (isDesktop ? bookBaseHeightDesktop : bookBaseHeightMobile) * 0.6
               }px`,
-            }}>
-              <div className="justify-self-start">
-                {book.title.length > (isDesktop ? 18 : 15)
-                  ? book.title.substring(0, isDesktop ? 16 : 13) + "..."
-                  : book.title}
-              </div>
+            }}
+          >
+            <span className="justify-self-start truncate">
+              {book.title}
+            </span>
           </p>
         </div>
 
+        {/* Cover Content */}
         <div
           className={`relative z-[5] ml-6 md:ml-8 flex flex-col h-full p-2 md:p-2.5 overflow-hidden ${coverPageEffect}`}
         >
@@ -277,7 +322,6 @@ const Book = ({
 
 // Main Page Component
 function AutoCenterSelectedBookPage() {
-  // ... (all existing state and useEffect hooks remain the same) ...
   const [rawBooks, setRawBooks] = useState([]);
   const [isLoaded, setLoaded] = useState(false);
   const [error, setError] = useState(null);
@@ -358,14 +402,14 @@ function AutoCenterSelectedBookPage() {
           setStarredBookIds(favoriteIds);
         }
       } catch (err) {
-        if (err.response && err.response.status !== 401) {
+        if (err.response && err.response.status !== 401) { // Don't show console error for 401
           console.error("Error fetching user favorites:", err);
         } else if (!err.response) {
           console.error("Network error fetching user favorites:", err);
         }
       }
     };
-    if (isLoaded && booksData.length > 0) {
+    if (isLoaded && booksData.length > 0) { // Only fetch if books are loaded
         fetchUserFavorites();
     }
   }, [isLoaded, booksData]);
@@ -393,7 +437,7 @@ function AutoCenterSelectedBookPage() {
             block: isDesktop ? "nearest" : "center",
             inline: isDesktop ? "center" : "nearest",
           });
-        }, 50);
+        }, 50); // Delay to allow selection animation to start
       }
     },
     [selectedBookId, isDesktop]
@@ -408,6 +452,7 @@ function AutoCenterSelectedBookPage() {
     const isCurrentlyStarred = starredBookIds.has(bookId);
     const originalStarredBookIds = new Set(starredBookIds); 
 
+    // Optimistically update UI
     setStarredBookIds(prevStarredIds => {
       const newStarredIds = new Set(prevStarredIds);
       if (isCurrentlyStarred) {
@@ -426,7 +471,7 @@ function AutoCenterSelectedBookPage() {
       }
     } catch (err) {
       console.error("Error toggling star status:", err);
-      setStarredBookIds(originalStarredBookIds); 
+      setStarredBookIds(originalStarredBookIds); // Revert on error
 
       if (err.response) {
         if (err.response.status === 401) {
@@ -465,13 +510,14 @@ function AutoCenterSelectedBookPage() {
   const handleSearchResults = useCallback((results, term) => {
     setDisplayedBooks(results);
     setActiveSearchTerm(term);
+    // If selected book is filtered out, deselect it
     if (selectedBookId && !results.find(book => book.id === selectedBookId)) {
       deselectBook();
     }
   }, [selectedBookId, deselectBook]);
 
-  const desktopBookPopUpHeight = 48;
-  const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20;
+  const desktopBookPopUpHeight = 48; // For selected book translateY
+  const desktopContainerVerticalPadding = desktopBookPopUpHeight + 20; // Ensure space for popup
 
   if (!isLoaded && !error) {
     return (
@@ -480,7 +526,7 @@ function AutoCenterSelectedBookPage() {
       </div>
     );
   }
-  if (error && booksData.length === 0) {
+  if (error && booksData.length === 0) { // Critical error, no data to show
     return (
       <div className="min-h-screen flex items-center justify-center text-red-400 text-center px-4">
         {error}
@@ -490,7 +536,6 @@ function AutoCenterSelectedBookPage() {
 
   return (
     <div className="min-h-screen flex flex-col px-0 overflow-x-hidden text-slate-100">
-      {/* ... (Header, SearchBar remain the same) ... */}
       <header className="w-full text-center py-8 sm:py-10 shrink-0 px-4">
         <h1 className="text-3xl pb-2 sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 mb-2 sm:mb-3">
           The Scholar's Auto-Centering Shelf
@@ -520,7 +565,7 @@ function AutoCenterSelectedBookPage() {
 
 
       <main className="flex-grow flex flex-col items-center justify-center w-full px-2 sm:px-4">
-        {error && booksData.length > 0 && (
+        {error && booksData.length > 0 && ( // Non-critical error, show data with message
           <p className="text-red-400 mb-4 text-center">
             {error} (Showing available data)
           </p>
@@ -553,7 +598,7 @@ function AutoCenterSelectedBookPage() {
                 : {}
             }
           >
-            {displayedBooks.map((book, index) => { // MODIFIED: Added index
+            {displayedBooks.map((book, index) => { 
               if (!bookRefs.current[book.id]) {
                 bookRefs.current[book.id] = React.createRef();
               }
@@ -567,7 +612,7 @@ function AutoCenterSelectedBookPage() {
                   bookRef={bookRefs.current[book.id]}
                   isStarred={starredBookIds.has(book.id)}
                   onToggleStar={handleToggleStar}
-                  animationIndex={index} // NEW: Pass index for animation
+                  animationIndex={index} 
                 />
               );
             })}
@@ -575,7 +620,6 @@ function AutoCenterSelectedBookPage() {
         )}
       </main>
 
-      {/* ... (Starring error display and Footer remain the same) ... */}
       {starringError && (
         <div 
           style={{
