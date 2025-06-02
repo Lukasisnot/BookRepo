@@ -1,9 +1,9 @@
 // controllers/user.js
-const User = require('../models/user'); // Adjust path if necessary
+const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose'); // Added for ObjectId validation
-const Book = require('../models/book'); // Uncomment and adjust path if you need to validate book existence
+const Book = require('../models/book');
 
 // Helper to sign JWT
 const signToken = (userId) => {
