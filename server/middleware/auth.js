@@ -5,7 +5,7 @@ exports.authenticateUser = (req, res, next) => {
     const token = req.cookies.token;
     if (!token) return res.status(401).json({ error: "Unauthorized" });
 
-    const decodedToken = jwt.verify(token, "secretKey");
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET || "secretKey");
     req.userId = decodedToken.userId;
 
     next();

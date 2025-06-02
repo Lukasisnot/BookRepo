@@ -20,7 +20,29 @@ var userRouter = require('./routes/user');
 var app = express();
 
 app.use(logger('dev'));
-app.use(cors());
+
+const allowedOrigins = [
+  'http://localhost:3000', // Your React frontend development server
+  'http://localhost:5173', // Vite's default dev server port (if you use Vite)
+  // Add your production frontend URL here if applicable
+  // e.g., 'https://your-frontend-app.com'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true, // <-- THIS IS CRUCIAL for allowing cookies
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());

@@ -2,17 +2,19 @@
 const User = require('../models/user'); // Adjust path if necessary
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose'); // Added for ObjectId validation
+const Book = require('../models/book'); // Uncomment and adjust path if you need to validate book existence
 
 // Helper to sign JWT
-const signToken = (userId) => { // Sign with userId as per your auth middleware
-  return jwt.sign({ userId }, "secretKey", { // IMPORTANT: Use process.env.JWT_SECRET
-    expiresIn: process.env.JWT_EXPIRES_IN || '90d' // Example expiry
+const signToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET || "secretKey", { 
+    expiresIn: process.env.JWT_EXPIRES_IN || '90d'
   });
 };
 
-// Helper to create and send token (stores in HTTP-only cookie)
+// Helper to create and send token
 const createSendTokenResponse = (user, statusCode, req, res) => {
-  const token = signToken(user._id); // Use user._id as userId for the token
+  const token = signToken(user._id);
 
   const cookieOptions = {
     expires: new Date(
@@ -23,16 +25,13 @@ const createSendTokenResponse = (user, statusCode, req, res) => {
     sameSite: 'lax',
   };
 
-  res.cookie('token', token, cookieOptions); // Ensure cookie name matches 'token' from your auth middleware
-
-  // Remove password from output
+  res.cookie('token', token, cookieOptions);
   user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
-    // token, // Not sending token in body as it's in httpOnly cookie
-    payload: { // Your frontend expects payload
-      user // Send the full user object (which includes name, email, role, _id)
+    payload: {
+      user
     }
   });
 };
@@ -56,7 +55,7 @@ exports.registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role === 'admin' ? 'admin' : 'user' // Securely handle role assignment
+      role: role === 'admin' ? 'admin' : 'user'
     });
 
     createSendTokenResponse(newUser, 201, req, res);
@@ -76,7 +75,7 @@ exports.loginUser = async (req, res) => {
 
     const user = await User.findOne({ email }).select('+password');
 
-    if (!user || !(await user.comparePassword(password))) { // Ensure comparePassword takes candidate only
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ status: 'fail', error: 'Incorrect email or password.' });
     }
 
@@ -88,7 +87,7 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.logoutUser = (req, res) => {
-  res.cookie('token', 'loggedout', { // Clear the 'token' cookie
+  res.cookie('token', 'loggedout', {
     expires: new Date(Date.now() + 5 * 1000),
     httpOnly: true,
   });
@@ -96,18 +95,17 @@ exports.logoutUser = (req, res) => {
 };
 
 exports.getMe = async (req, res) => {
-  // req.userId should be set by authenticateUser middleware
   if (!req.userId) {
     return res.status(401).json({ status: 'fail', error: 'Not authenticated' });
   }
   try {
-    const user = await User.findById(req.userId).select('-password'); // Exclude password
+    const user = await User.findById(req.userId).select('-password');
     if (!user) {
       return res.status(404).json({ status: 'fail', error: 'User not found' });
     }
     res.status(200).json({
       status: 'success',
-      payload: user // Send the user object, which includes the role
+      payload: user
     });
   } catch (error) {
     console.error("Error fetching current user:", error);
@@ -115,22 +113,14 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// NEW: Endpoint to get current user's favorite books
 exports.getUserFavoriteBooks = async (req, res) => {
-  // req.userId should be set by authenticateUser middleware
   if (!req.userId) {
     return res.status(401).json({ status: 'fail', error: 'Not authenticated' });
   }
   try {
-    // Find the user by their ID.
-    // .populate('favoriteBooks') will attempt to replace the ObjectIds in favoriteBooks
-    // with the actual documents from the referenced collection (e.g., 'Book').
-    // This requires the 'favoriteBooks' path in the User schema to have a 'ref' option.
-    // If 'ref' is not set, it will likely return the array of ObjectIds.
-    // .select('favoriteBooks') ensures that we primarily fetch the favoriteBooks field.
     const user = await User.findById(req.userId)
                            .populate('favoriteBooks') 
-                           .select('favoriteBooks _id'); // Also select _id to ensure user object is valid
+                           .select('favoriteBooks _id');
 
     if (!user) {
       return res.status(404).json({ status: 'fail', error: 'User not found' });
@@ -139,11 +129,83 @@ exports.getUserFavoriteBooks = async (req, res) => {
     res.status(200).json({
       status: 'success',
       payload: {
-        favoriteBooks: user.favoriteBooks // This will be an array of populated book objects or ObjectIds
+        favoriteBooks: user.favoriteBooks 
       }
     });
   } catch (error) {
     console.error("Error fetching user's favorite books:", error);
     res.status(500).json({ status: 'error', error: "Failed to fetch user's favorite books" });
+  }
+};
+
+// NEW: Add a book to user's favorites
+exports.addFavoriteBook = async (req, res) => {
+  try {
+    const userId = req.userId; // From auth.authenticateUser middleware
+    const { bookId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      return res.status(400).json({ status: 'fail', error: 'Invalid book ID format.' });
+    }
+
+    // Check if the book actually exists in the 'Book' collection
+    const bookExists = await Book.findById(bookId);
+    if (!bookExists) {
+      return res.status(404).json({ status: 'fail', error: 'Book not found.' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { favoriteBooks: bookId } }, // $addToSet prevents duplicates
+      { new: true } // Return the updated document
+    ).select('favoriteBooks');
+
+    if (!user) {
+      return res.status(404).json({ status: 'fail', error: 'User not found.' });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Book added to favorites.',
+      payload: {
+        favoriteBooks: user.favoriteBooks, // Returns array of ObjectId
+      },
+    });
+  } catch (error) {
+    console.error("Error adding favorite book:", error);
+    res.status(500).json({ status: 'error', error: 'Failed to add book to favorites.' });
+  }
+};
+
+// NEW: Remove a book from user's favorites
+exports.removeFavoriteBook = async (req, res) => {
+  try {
+    const userId = req.userId; // From auth.authenticateUser middleware
+    const { bookId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      return res.status(400).json({ status: 'fail', error: 'Invalid book ID format.' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { favoriteBooks: bookId } }, // $pull removes the item
+      { new: true } // Return the updated document
+    ).select('favoriteBooks');
+
+    if (!user) {
+      return res.status(404).json({ status: 'fail', error: 'User not found.' });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Book removed from favorites.',
+      payload: {
+        favoriteBooks: user.favoriteBooks, // Returns array of ObjectId
+      },
+    });
+  } catch (error) {
+    console.error("Error removing favorite book:", error);
+    res.status(500).json({ status: 'error', error: 'Failed to remove book from favorites.' });
   }
 };
