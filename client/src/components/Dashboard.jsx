@@ -40,19 +40,7 @@ function Dashboard({ user, handleLogout, authLoading }) {
       {/* Pass user to AdminPage if it needs current user details */}
       <AdminPage currentUser={user} />
       
-      <div className="flex flex-col items-center text-center mt-10 p-4">
-        <Card className="max-w-sm">
-          <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Admin Panel
-          </h5>
-          <p className="font-normal text-gray-700 dark:text-gray-400">
-            Welcome, {user.name || 'Admin'}! ({user.email})
-          </p>
-          <Button color="failure" onClick={onLogoutClick} isProcessing={authLoading} className="mt-4" disabled={authLoading}>
-            Logout
-          </Button>
-        </Card>
-      </div>
+      
     </div>
   );
 }
