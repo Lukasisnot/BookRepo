@@ -67,7 +67,7 @@ export default function AdminPage() {
         {/* Adjust pt-20 or pt-24 depending on your NavBar's height if it's fixed */}
         <div className="pt-20 sm:pt-24"> 
           <header className="text-center mb-12 sm:mb-16">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500">
+            <h1 className="text-4xl pb-2 sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-500 to-sky-500">
               Content Management
             </h1>
             <p className="mt-3 text-base sm:text-lg text-slate-300 max-w-xl mx-auto">

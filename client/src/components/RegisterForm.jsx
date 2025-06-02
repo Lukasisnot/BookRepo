@@ -1,12 +1,18 @@
+// src/components/RegisterForm.jsx
 import React, { useState } from 'react';
-import { TextInput, Button, Label, Card, Alert } from 'flowbite-react';
-// Import HiUser for the name field icon
+import { TextInput, Button, Label, Alert as FlowbiteAlert } from 'flowbite-react';
 import { HiUser, HiMail, HiLockClosed, HiInformationCircle } from 'react-icons/hi';
-import API from '../api';
+import API from '../api'; // Assuming API is correctly configured
 import { Link, useNavigate } from 'react-router-dom';
 
+// Assuming custom themes are imported or defined above this component
+import { customInputTheme, customAlertTheme } from './flowbiteCustomThemes';
+// Or define them here:
+// const customInputTheme = { /* ... as defined above ... */ };
+// const customAlertTheme = { /* ... as defined above ... */ };
+
 function RegisterForm() {
-  const [name, setName] = useState(''); // <<<--- ADDED name state
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,7 +26,7 @@ function RegisterForm() {
     setError('');
     setSuccess('');
 
-    if (!name.trim()) { // Basic validation for name
+    if (!name.trim()) {
         setError('Name is required');
         return;
     }
@@ -35,16 +41,12 @@ function RegisterForm() {
 
     setLoading(true);
     try {
-      // Send name, email, and password to the backend
-      const response = await API.post('/user/register', { name, email, password }); // <<<--- MODIFIED: Sending name
-      // Changed path to /api/user/register based on previous discussion
-
+      const response = await API.post('/user/register', { name, email, password });
       setSuccess(response.data.message + " You can now login.");
-      setName(''); // Clear name field
+      setName('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-      // Optionally navigate to login after a delay
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -56,95 +58,123 @@ function RegisterForm() {
   };
 
   return (
-    <Card className="max-w-md mx-auto mt-10">
-      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white text-center">
-        Register New Account
-      </h5>
-      {error && (
-        <Alert color="failure" icon={HiInformationCircle} className="my-4"> {/* Added margin for better spacing */}
-          <span>
-            <span className="font-medium">Error!</span> {error}
-          </span>
-        </Alert>
-      )}
-      {success && (
-        <Alert color="success" icon={HiInformationCircle} className="my-4"> {/* Added margin */}
-          <span>
-            <span className="font-medium">Success!</span> {success}
-          </span>
-        </Alert>
-      )}
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        <div> {/* <<<--- ADDED Name Input Field Block */}
-          <div className="mb-2 block">
-            <Label htmlFor="name-register" value="Your name" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 py-10 sm:py-16 flex items-center justify-center antialiased">
+      <div className="w-full max-w-md bg-slate-800/70 backdrop-blur-md rounded-xl shadow-2xl p-6 sm:p-8">
+        <h5 className="text-2xl sm:text-3xl font-bold tracking-tight text-sky-300 text-center mb-6 sm:mb-8">
+          Register New Account
+        </h5>
+        
+        {error && (
+          <FlowbiteAlert
+            color="failure"
+            icon={HiInformationCircle}
+            theme={customAlertTheme}
+            className="mb-4"
+          >
+            <span>
+              <span className="font-medium">Error!</span> {error}
+            </span>
+          </FlowbiteAlert>
+        )}
+        {success && (
+          <FlowbiteAlert
+            color="success"
+            icon={HiInformationCircle}
+            theme={customAlertTheme}
+            className="mb-4"
+          >
+            <span>
+              <span className="font-medium">Success!</span> {success}
+            </span>
+          </FlowbiteAlert>
+        )}
+
+        <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="name-register" value="Your name" className="text-slate-300" />
+            </div>
+            <TextInput
+              id="name-register"
+              type="text"
+              icon={HiUser}
+              placeholder="John Doe"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+              theme={customInputTheme}
+              color="gray"
+            />
           </div>
-          <TextInput
-            id="name-register"
-            type="text"
-            icon={HiUser}
-            placeholder="John Doe"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-        <div>
-          <div className="mb-2 block">
-            <Label htmlFor="email-register" value="Your email" />
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="email-register" value="Your email" className="text-slate-300" />
+            </div>
+            <TextInput
+              id="email-register"
+              type="email"
+              icon={HiMail}
+              placeholder="name@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              theme={customInputTheme}
+              color="gray"
+            />
           </div>
-          <TextInput
-            id="email-register"
-            type="email"
-            icon={HiMail}
-            placeholder="name@example.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-        <div>
-          <div className="mb-2 block">
-            <Label htmlFor="password-register" value="Your password" />
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="password-register" value="Your password" className="text-slate-300" />
+            </div>
+            <TextInput
+              id="password-register"
+              type="password"
+              icon={HiLockClosed}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              theme={customInputTheme}
+              color="gray"
+              helperText={<span className="text-slate-400 text-xs">Must be at least 6 characters.</span>} // Styled helper text
+            />
           </div>
-          <TextInput
-            id="password-register"
-            type="password"
-            icon={HiLockClosed}
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            helperText="Must be at least 6 characters." // Added helper text
-          />
-        </div>
-        <div>
-          <div className="mb-2 block">
-            <Label htmlFor="confirm-password" value="Confirm password" />
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="confirm-password" value="Confirm password" className="text-slate-300" />
+            </div>
+            <TextInput
+              id="confirm-password"
+              type="password"
+              icon={HiLockClosed}
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
+              theme={customInputTheme}
+              color="gray"
+            />
           </div>
-          <TextInput
-            id="confirm-password"
-            type="password"
-            icon={HiLockClosed}
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+          <Button
+            type="submit"
+            isProcessing={loading}
             disabled={loading}
-          />
-        </div>
-        <Button type="submit" isProcessing={loading} disabled={loading}>
-          Register
-        </Button>
-        <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
-          Already registered?{' '}
-          <Link to="/login" className="text-cyan-700 hover:underline dark:text-cyan-500">
-            Login here
-          </Link>
-        </div>
-      </form>
-    </Card>
+            className="w-full mt-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all focus:ring-4 focus:outline-none focus:ring-sky-400/50 disabled:opacity-60 disabled:saturate-50"
+            color="transparent"
+          >
+            Register
+          </Button>
+          <div className="text-sm text-center text-slate-400 mt-4">
+            Already registered?{' '}
+            <Link to="/login" className="font-medium text-sky-400 hover:underline hover:text-sky-300">
+              Login here
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

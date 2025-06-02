@@ -80,7 +80,7 @@ export default function LiteraryGroupList() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 pb-12 antialiased">
       <div className="pt-20 sm:pt-24">
         <header className="text-center mb-6 sm:mb-8"> {/* Reduced bottom margin for search bar */}
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-500 to-sky-500">
+          <h1 className="text-4xl pb-2 sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-500 to-sky-500">
             Literary Movements
           </h1>
           <p className="mt-3 text-base sm:text-lg text-slate-300 max-w-xl mx-auto">

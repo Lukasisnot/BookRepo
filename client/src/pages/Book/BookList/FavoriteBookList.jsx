@@ -179,7 +179,7 @@ export default function FavoriteBookList() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 pb-12 antialiased">
         <div className="pt-20 sm:pt-24">
           <header className="text-center mb-10 sm:mb-12">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500">
+            <h1 className="text-4xl pb-2 sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500">
               My Favorite Books
             </h1>
             <p className="mt-3 text-base sm:text-lg text-slate-300 max-w-xl mx-auto">

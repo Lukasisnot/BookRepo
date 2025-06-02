@@ -538,7 +538,7 @@ function AutoCenterSelectedBookPage() {
     <div className="min-h-screen flex flex-col px-0 overflow-x-hidden text-slate-100">
       <header className="w-full text-center py-8 sm:py-10 shrink-0 px-4">
         <h1 className="text-3xl pb-2 sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 mb-2 sm:mb-3">
-          The Scholar's Auto-Centering Shelf
+          The Book Shelf
         </h1>
         <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
           {selectedBookId && selectedBookDetails ? (

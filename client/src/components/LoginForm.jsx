@@ -1,25 +1,28 @@
 // src/components/LoginForm.jsx
 import React, { useState, useEffect } from 'react';
-import { TextInput, Button, Label, Card, Alert } from 'flowbite-react';
+import { TextInput, Button, Label, Alert as FlowbiteAlert } from 'flowbite-react';
 import { HiMail, HiLockClosed, HiInformationCircle } from 'react-icons/hi';
-import { Link } from 'react-router-dom'; // useNavigate removed, AppRoutes will handle navigation
+import { Link } from 'react-router-dom';
 
-// Props will be passed from AppRoutes:
-// handleLogin (function), authLoading (boolean), authError (string | null)
+// Assuming custom themes are imported or defined above this component
+import { customInputTheme, customAlertTheme } from './flowbiteCustomThemes';
+// Or define them here:
+// const customInputTheme = { /* ... as defined above ... */ };
+// const customAlertTheme = { /* ... as defined above ... */ };
+
+
 function LoginForm({ handleLogin, authLoading, authError, clearAuthError }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [formError, setFormError] = useState(''); // Local form validation error
+  const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    // Clear any persistent authError from AppRoutes when form fields change
     if (authError) {
       clearAuthError();
     }
-    setFormError(''); // Also clear local form error
+    setFormError('');
   }, [email, password, authError, clearAuthError]);
-
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -31,81 +34,103 @@ function LoginForm({ handleLogin, authLoading, authError, clearAuthError }) {
       return;
     }
 
-    const result = await handleLogin(email, password); // handleLogin is from AppRoutes
+    const result = await handleLogin(email, password);
 
     if (result && result.success) {
       setSuccessMessage(result.message || "Login successful! Redirecting...");
-      // Navigation is handled by AppRoutes after user state is set
     } else if (result && result.error) {
-      setFormError(result.error); // Show error from login attempt
-    } else if (!authError) { // Fallback if result is undefined but no authError from context
+      setFormError(result.error);
+    } else if (!authError) {
       setFormError("Login failed. Please try again.");
     }
   };
   
-  // authError comes from AppRoutes, potentially from initial load or previous actions
   const displayError = formError || authError;
 
   return (
-    <Card className="max-w-md mx-auto mt-10">
-      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white text-center">
-        Login to your Account
-      </h5>
-      {displayError && (
-        <Alert color="failure" icon={HiInformationCircle} className="mt-2">
-          <span>
-            <span className="font-medium">Error!</span> {displayError}
-          </span>
-        </Alert>
-      )}
-      {successMessage && !displayError && ( // Show success only if no error
-        <Alert color="success" icon={HiInformationCircle} className="mt-2">
-          <span>
-            <span className="font-medium">Success!</span> {successMessage}
-          </span>
-        </Alert>
-      )}
-      <form className="flex flex-col gap-4 mt-4" onSubmit={onSubmit}>
-        <div>
-          <div className="mb-2 block">
-            <Label htmlFor="email-login" value="Your email" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-800 text-slate-100 px-4 py-10 sm:py-16 flex items-center justify-center antialiased">
+      <div className="w-full max-w-md bg-slate-800/70 backdrop-blur-md rounded-xl shadow-2xl p-6 sm:p-8">
+        <h5 className="text-2xl sm:text-3xl font-bold tracking-tight text-sky-300 text-center mb-6 sm:mb-8">
+          Login to your Account
+        </h5>
+        
+        {displayError && (
+          <FlowbiteAlert
+            color="failure"
+            icon={HiInformationCircle}
+            theme={customAlertTheme}
+            className="mb-4" // Use customAlertTheme for styling
+          >
+            <span>
+              <span className="font-medium">Error!</span> {displayError}
+            </span>
+          </FlowbiteAlert>
+        )}
+        {successMessage && !displayError && (
+          <FlowbiteAlert
+            color="success"
+            icon={HiInformationCircle}
+            theme={customAlertTheme}
+            className="mb-4" // Use customAlertTheme for styling
+          >
+            <span>
+              <span className="font-medium">Success!</span> {successMessage}
+            </span>
+          </FlowbiteAlert>
+        )}
+
+        <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="email-login" value="Your email" className="text-slate-300" />
+            </div>
+            <TextInput
+              id="email-login"
+              type="email"
+              icon={HiMail}
+              placeholder="name@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={authLoading}
+              theme={customInputTheme}
+              color="gray" // This tells Flowbite to use the 'gray' styles from our theme
+            />
           </div>
-          <TextInput
-            id="email-login"
-            type="email"
-            icon={HiMail}
-            placeholder="name@example.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={authLoading}
-          />
-        </div>
-        <div>
-          <div className="mb-2 block">
-            <Label htmlFor="password-login" value="Your password" />
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="password-login" value="Your password" className="text-slate-300" />
+            </div>
+            <TextInput
+              id="password-login"
+              type="password"
+              icon={HiLockClosed}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={authLoading}
+              theme={customInputTheme}
+              color="gray"
+            />
           </div>
-          <TextInput
-            id="password-login"
-            type="password"
-            icon={HiLockClosed}
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+          <Button
+            type="submit"
+            isProcessing={authLoading}
             disabled={authLoading}
-          />
-        </div>
-        <Button type="submit" isProcessing={authLoading} disabled={authLoading}>
-          Login
-        </Button>
-        <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
-          Not registered?{' '}
-          <Link to="/register" className="text-cyan-700 hover:underline dark:text-cyan-500">
-            Create account
-          </Link>
-        </div>
-      </form>
-    </Card>
+            className="w-full mt-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all focus:ring-4 focus:outline-none focus:ring-sky-400/50 disabled:opacity-60 disabled:saturate-50"
+            color="transparent" // Attempt to suppress default Flowbite button colors more effectively
+          >
+            Login
+          </Button>
+          <div className="text-sm text-center text-slate-400 mt-4">
+            Not registered?{' '}
+            <Link to="/register" className="font-medium text-sky-400 hover:underline hover:text-sky-300">
+              Create account
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
