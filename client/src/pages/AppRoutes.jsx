@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Navbar, NavbarBrand, NavbarCollapse, NavbarLink, NavbarToggle, Spinner } from 'flowbite-react';
-import API from '../api'; // Your API instance
+import API from '../api';
 
-// Page Imports
+// Page Imports (keep all your existing page imports)
 import AdminContentPage from "./AdminPage/AdminPage";
 import MainPage2 from "./MainPage2/MainPage2";
 import About from "./About/About";
-
+// ... other page imports ...
 import PeriodCreateForm from "./Period/PeriodCreateForm/PeriodCreateForm";
 import CreatedPeriod from "./Period/PeriodCreateForm/CreatedPeriod";
 import PeriodUpdateForm from "./Period/PeriodUpdateForm/PeriodUpdateForm";
@@ -39,9 +39,9 @@ import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import Dashboard from '../components/Dashboard';
 import ProtectedRoute from '../components/ProtectedRoute';
+import Footer from '../components/Footer';
 
-
-function AppRoutesLogic() {
+function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -107,7 +107,7 @@ function AppRoutesLogic() {
     try {
       await API.get('/user/logout');
     } catch (err) {
-      console.error('[AppRoutesLogic] Logout API call failed:', err);
+      console.error('[AppLayout] Logout API call failed:', err);
     } finally {
       setUser(null);
       localStorage.removeItem('isUserLoggedIn');
@@ -120,14 +120,19 @@ function AppRoutesLogic() {
 
   if (authLoading && !user && !['/login', '/register'].includes(location.pathname)) {
     return (
-      <div className="flex justify-center items-center h-screen bg-slate-900">
+      // This loading screen will now also have a transparent background
+      // unless you add a specific background to this div too.
+      // For consistency, if you want a dark loading screen, add bg-slate-900 here.
+      <div className="flex justify-center items-center h-screen"> 
         <Spinner size="xl" aria-label="Loading application..." />
       </div>
     );
   }
 
   return (
-    <>
+    // REMOVED 'bg-slate-900' from here.
+    // The layout itself is now transparent.
+    <div className="flex flex-col min-h-screen"> 
       <Navbar 
         fluid 
         className="sticky top-0 z-50 w-full bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800 border-b-2 border-indigo-500"
@@ -149,7 +154,6 @@ function AppRoutesLogic() {
             <NavbarLink><Spinner size="sm" /></NavbarLink>
           ) : user ? (
             <>
-              {/* *** NEW NAVBAR LINK *** */}
               <NavbarLink as={Link} to="/my-favorites" className="text-indigo-500 hover:text-sky-400">My Favorites</NavbarLink>
               {user.role === 'admin' && (
                 <NavbarLink as={Link} to="/dashboard" className="text-indigo-500 hover:text-sky-400">Admin Dashboard</NavbarLink>
@@ -167,83 +171,86 @@ function AppRoutesLogic() {
         </NavbarCollapse>
       </Navbar>
 
-      <div className="w-full p-4"> {/* Consider if p-4 is needed if pages manage their own padding */}
-        <Routes>
-          <Route path="/" element={<MainPage2 />} />
-          <Route path="/about" element={<About />} />
-          
-          <Route 
-            path="/login" 
-            element={user ? <Navigate to="/" replace /> : <LoginForm handleLogin={handleLogin} authLoading={authLoading} authError={authError} clearAuthError={clearAuthError} />} 
-          />
-          <Route 
-            path="/register" 
-            element={user ? <Navigate to="/" replace /> : <RegisterForm />} 
-          />
-          
-          <Route 
-            path="/dashboard" 
-            element={
-              authLoading && !user ? <Spinner size="xl" /> : 
-              user && user.role === 'admin' ? (
-                <Dashboard user={user} handleLogout={handleLogout} authLoading={authLoading} />
-              ) : user ? ( 
-                <Navigate to="/" replace state={{ message: "Access Denied: Admins only." }} />
-              ) : ( 
-                <Navigate to="/login" state={{ from: location }} replace />
-              )
-            } 
-          />
+      <main className="flex-grow w-full">
+        <div className="p-4">
+          <Routes>
+            <Route path="/" element={<MainPage2 />} />
+            <Route path="/about" element={<About />} />
+            
+            <Route 
+              path="/login" 
+              element={user ? <Navigate to="/" replace /> : <LoginForm handleLogin={handleLogin} authLoading={authLoading} authError={authError} clearAuthError={clearAuthError} />} 
+            />
+            <Route 
+              path="/register" 
+              element={user ? <Navigate to="/" replace /> : <RegisterForm />} 
+            />
+            
+            <Route 
+              path="/dashboard" 
+              element={
+                authLoading && !user ? <Spinner size="xl" /> : 
+                user && user.role === 'admin' ? (
+                  <Dashboard user={user} handleLogout={handleLogout} authLoading={authLoading} />
+                ) : user ? ( 
+                  <Navigate to="/" replace state={{ message: "Access Denied: Admins only." }} />
+                ) : ( 
+                  <Navigate to="/login" state={{ from: location }} replace />
+                )
+              } 
+            />
 
-          {/* Period Routes */}
-          <Route path="/createperiod" element={<ProtectedRoute><PeriodCreateForm /></ProtectedRoute>} />
-          <Route path="/createdperiod/:id" element={<ProtectedRoute><CreatedPeriod /></ProtectedRoute>} />
-          <Route path="/updateperiod/:id" element={<ProtectedRoute><PeriodUpdateForm /></ProtectedRoute>} />
-          <Route path="/period/:id" element={<PeriodView user={user} />} />
-          <Route path="/period" element={<PeriodList />} />
+            {/* Period Routes */}
+            <Route path="/createperiod" element={<ProtectedRoute><PeriodCreateForm /></ProtectedRoute>} />
+            <Route path="/createdperiod/:id" element={<ProtectedRoute><CreatedPeriod /></ProtectedRoute>} />
+            <Route path="/updateperiod/:id" element={<ProtectedRoute><PeriodUpdateForm /></ProtectedRoute>} />
+            <Route path="/period/:id" element={<PeriodView user={user} />} />
+            <Route path="/period" element={<PeriodList />} />
 
-          {/* Literary Group Routes */}
-          <Route path="/createliterary-group" element={<ProtectedRoute><LiteraryGroupCreateForm /></ProtectedRoute>} />
-          <Route path="/createdliterary-group/:id" element={<ProtectedRoute><CreatedLiteraryGroup /></ProtectedRoute>} />
-          <Route path="/updateliterary-group/:id" element={<ProtectedRoute><LiteraryGroupUpdateForm /></ProtectedRoute>} />
-          <Route path="/literary-group/:id" element={<LiteraryGroupView user={user} />} />
-          <Route path="/literary-group" element={<LiteraryGroupList />} />
+            {/* Literary Group Routes */}
+            <Route path="/createliterary-group" element={<ProtectedRoute><LiteraryGroupCreateForm /></ProtectedRoute>} />
+            <Route path="/createdliterary-group/:id" element={<ProtectedRoute><CreatedLiteraryGroup /></ProtectedRoute>} />
+            <Route path="/updateliterary-group/:id" element={<ProtectedRoute><LiteraryGroupUpdateForm /></ProtectedRoute>} />
+            <Route path="/literary-group/:id" element={<LiteraryGroupView user={user} />} />
+            <Route path="/literary-group" element={<LiteraryGroupList />} />
 
-          {/* Author Routes */}
-          <Route path="/createauthor" element={<ProtectedRoute><AuthorCreateForm /></ProtectedRoute>} />
-          <Route path="/createdauthor/:id" element={<ProtectedRoute><CreatedAuthor /></ProtectedRoute>} />
-          <Route path="/updateauthor/:id" element={<ProtectedRoute><AuthorUpdateForm /></ProtectedRoute>} />
-          <Route path="/author/:id" element={<AuthorView user={user} />} />
-          <Route path="/author" element={<AuthorList />} />
+            {/* Author Routes */}
+            <Route path="/createauthor" element={<ProtectedRoute><AuthorCreateForm /></ProtectedRoute>} />
+            <Route path="/createdauthor/:id" element={<ProtectedRoute><CreatedAuthor /></ProtectedRoute>} />
+            <Route path="/updateauthor/:id" element={<ProtectedRoute><AuthorUpdateForm /></ProtectedRoute>} />
+            <Route path="/author/:id" element={<AuthorView user={user} />} />
+            <Route path="/author" element={<AuthorList />} />
 
-          {/* Book Routes */}
-          <Route path="/createbook" element={<ProtectedRoute><BookCreateForm /></ProtectedRoute>} />
-          <Route path="/createdbook/:id" element={<ProtectedRoute><CreatedBook /></ProtectedRoute>} />
-          <Route path="/updatebook/:id" element={<ProtectedRoute><BookUpdateForm /></ProtectedRoute>} />
-          <Route path="/book/:id" element={<BookView user={user} />} />
-          <Route path="/book" element={<BookList />} />
+            {/* Book Routes */}
+            <Route path="/createbook" element={<ProtectedRoute><BookCreateForm /></ProtectedRoute>} />
+            <Route path="/createdbook/:id" element={<ProtectedRoute><CreatedBook /></ProtectedRoute>} />
+            <Route path="/updatebook/:id" element={<ProtectedRoute><BookUpdateForm /></ProtectedRoute>} />
+            <Route path="/book/:id" element={<BookView user={user} />} />
+            <Route path="/book" element={<BookList />} />
+            
+            <Route 
+              path="/my-favorites" 
+              element={
+                <ProtectedRoute>
+                  <FavoriteBookList />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </main>
 
-          {/* *** NEW FAVORITE BOOKS ROUTE *** */}
-          <Route 
-            path="/my-favorites" 
-            element={
-              <ProtectedRoute>
-                <FavoriteBookList />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </>
+      <Footer user={user} />
+    </div>
   );
 }
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
-      <AppRoutesLogic />
+      <AppLayout />
     </BrowserRouter>
   );
 }

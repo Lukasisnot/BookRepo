@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import api from "../../api"; // Assumed API client for fetching data
 import SearchBar from "../../components/SearchBar"; // Reusable SearchBar component
+import Footer from "../../components/Footer"; // <<--- IMPORT THE NEW FOOTER COMPONENT
 
 // Color palettes (remains unchanged)
 const colorPalettes = [
@@ -658,12 +659,6 @@ function AutoCenterSelectedBookPage() {
           </button>
         </div>
       )}
-
-      <footer className="w-full text-center py-6 shrink-0 px-4">
-        <p className="text-xs sm:text-sm text-slate-400">
-          © {new Date().getFullYear()} Your Learning Platform.
-        </p>
-      </footer>
     </div>
   );
 }
